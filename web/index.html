@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConfigGuard | Cloud Configuration Comparison SaaS</title>
+    <style>
+        :root {
+            --bg-page: #fbfbfd;
+            --bg-card: #ffffff;
+            --bg-subtle: #f5f5f7;
+            --bg-active: #ebebee;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #86868b;
+            --accent: #0071e3;
+            --accent-hover: #0077ed;
+            --accent-active: #006edb;
+            --accent-light: #f0f7ff;
+            --accent-border: #b9d9fb;
+            --border: #d2d2d7;
+            --border-light: #e5e5e7;
+            --success: #1e824c;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --warning: #b45309;
+            --warning-bg: #fffbeb;
+            --warning-border: #fde68a;
+            --danger: #b91c1c;
+            --danger-bg: #fef2f2;
+            --danger-border: #fecaca;
+            --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --font-mono: "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
+            --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.04), 0 6px 18px rgba(0, 0, 0, 0.03);
+            --shadow-modal: 0 12px 36px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            font-family: var(--font-system);
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            font-weight: 600;
+            letter-spacing: -0.015em;
+        }
+
+        p {
+            color: var(--text-secondary);
+        }
+
+        /* Header Navigation */
+        .site-header {
+            background: rgba(251, 251, 253, 0.92);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0 24px;
+            width: 100%;
+        }
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            flex-shrink: 0;
+        }
+
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--text-primary);
+            color: #ffffff;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-name {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-tag {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 7px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+
+        .nav-tabs {
+            display: flex;
+            align-items: center;
+            background: var(--bg-subtle);
+            padding: 3px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .nav-tab-btn {
+            background: transparent;
+            border: none;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s ease;
+            font-family: var(--font-system);
+            white-space: nowrap;
+        }
+
+        .nav-tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-tab-btn.active {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+
+        .session-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .session-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .session-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-system);
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .session-select:focus-visible {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+        }
+
+        /* Main Content Layout */
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 36px 24px 64px 24px;
+        }
+
+        /* Hero / Product Introduction */
+        .product-hero {
+            padding-bottom: 28px;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 28px;
+        }
+
+        .product-hero-badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .product-hero-title {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.025em;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .product-hero-desc {
+            font-size: 16px;
+            max-width: 760px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* Status & Quota Bar */
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 18px 24px;
+            box-shadow: var(--shadow-subtle);
+            margin-bottom: 28px;
+        }
+
+        .status-metric {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .status-metric-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            font-weight: 600;
+        }
+
+        .status-metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .badge-active {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid var(--success-border);
+        }
+
+        .badge-suspended {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger-border);
+        }
+
+        .badge-pro {
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid var(--accent-border);
+        }
+
+        .badge-basic {
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        /* Two-Column Working Product Area */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+            width: 100%;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Form Controls */
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .op-toggle-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .op-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.15s ease;
+            background: var(--bg-card);
+            user-select: none;
+        }
+
+        .op-card:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .op-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .op-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .op-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .op-card-tag {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-subtle);
+            color: var(--text-tertiary);
+            border: 1px solid var(--border-light);
+        }
+
+        .op-card.selected .op-card-tag {
+            background: #ffffff;
+            color: var(--accent);
+            border-color: var(--accent-border);
+        }
+
+        .op-card-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Fixture buttons */
+        .fixture-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn-subtle {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 5px 11px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: var(--font-system);
+            white-space: nowrap;
+        }
+
+        .btn-subtle:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+            background: var(--bg-active);
+        }
+
+        /* JSON Textarea */
+        .code-textarea {
+            width: 100%;
+            height: 240px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            resize: vertical;
+            transition: border-color 0.15s ease;
+        }
+
+        .code-textarea:focus-visible {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+        }
+
+        /* Idempotency bar */
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .text-input {
+            flex: 1;
+            min-width: 0;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 7px 10px;
+            font-size: 12.5px;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+
+        .text-input:focus-visible {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+        }
+
+        /* Checkbox */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label input {
+            accent-color: var(--accent);
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        /* Action Button */
+        .btn-primary {
+            width: 100%;
+            background: var(--accent);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: var(--font-system);
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.05s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            background: var(--accent-active);
+            transform: scale(0.99);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .btn-primary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.35);
+        }
+
+        /* Results Display */
+        .results-empty-state {
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--text-tertiary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .empty-icon {
+            width: 36px;
+            height: 36px;
+            stroke: var(--text-tertiary);
+        }
+
+        .results-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .summary-metric-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .summary-metric-card.changed {
+            background: var(--warning-bg);
+            border-color: var(--warning-border);
+        }
+
+        .summary-metric-card.unchanged {
+            background: var(--success-bg);
+            border-color: var(--success-border);
+        }
+
+        .summary-metric-card.invalid {
+            background: var(--danger-bg);
+            border-color: var(--danger-border);
+        }
+
+        .summary-metric-num {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .summary-metric-card.changed .summary-metric-num {
+            color: var(--warning);
+        }
+
+        .summary-metric-card.unchanged .summary-metric-num {
+            color: var(--success);
+        }
+
+        .summary-metric-card.invalid .summary-metric-num {
+            color: var(--danger);
+        }
+
+        .summary-metric-lbl {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Results Table */
+        .table-wrapper {
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            background: #ffffff;
+            width: 100%;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            text-align: left;
+            min-width: 340px;
+        }
+
+        .data-table th {
+            background: var(--bg-subtle);
+            padding: 9px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr.row-changed {
+            background: #fffcf0;
+        }
+
+        .status-pill {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 2px 7px;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+        }
+
+        .status-pill.changed {
+            background: var(--warning-bg);
+            color: var(--warning);
+            border: 1px solid var(--warning-border);
+        }
+
+        .status-pill.unchanged {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid var(--success-border);
+        }
+
+        .status-pill.invalid {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger-border);
+        }
+
+        /* Alert Callouts */
+        .callout {
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            font-size: 13px;
+            line-height: 1.45;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .callout-warning {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            color: var(--warning);
+        }
+
+        .callout-error {
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            color: var(--danger);
+        }
+
+        /* History Screen */
+        .history-view {
+            display: none;
+        }
+
+        .history-view.active {
+            display: block;
+        }
+
+        .run-view {
+            display: block;
+        }
+
+        .run-view.hidden {
+            display: none;
+        }
+
+        /* Modal Dialog */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-dialog {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-modal);
+            width: 100%;
+            max-width: 680px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .modal-close-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 14px 24px;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-subtle);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Footer */
+        .site-footer {
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-card);
+            padding: 32px 24px;
+            margin-top: auto;
+        }
+
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.15s ease;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 13px;
+            font-family: var(--font-system);
+        }
+
+        .footer-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 860px) {
+            .site-header {
+                height: auto;
+            }
+            .header-inner {
+                padding: 10px 0;
+                flex-wrap: wrap;
+                gap: 12px;
+                height: auto;
+            }
+            .brand-group {
+                order: 1;
+            }
+            .nav-tabs {
+                order: 2;
+            }
+            .session-selector-group {
+                order: 3;
+                width: 100%;
+                justify-content: space-between;
+                padding-top: 8px;
+                border-top: 1px solid var(--border-light);
+            }
+            .session-select {
+                flex: 1;
+                max-width: 260px;
+                min-width: 0;
+            }
+            .status-bar {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 14px 16px;
+            }
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+            main {
+                padding: 20px 16px 48px 16px;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+            .site-header {
+                padding: 0 16px;
+                height: auto;
+            }
+            .header-inner {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                height: auto;
+            }
+            .brand-group {
+                justify-content: space-between;
+            }
+            .nav-tabs {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                text-align: center;
+            }
+            .nav-tab-btn {
+                width: 100%;
+            }
+            .session-selector-group {
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .session-select {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+            }
+            .product-hero-title {
+                font-size: 24px;
+            }
+            .status-bar {
+                grid-template-columns: 1fr;
+                padding: 14px 14px;
+            }
+            .op-toggle-grid {
+                grid-template-columns: 1fr;
+            }
+            .card {
+                padding: 16px 14px;
+            }
+            .fixture-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .fixture-bar div {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                width: 100%;
+            }
+            .fixture-bar .btn-subtle {
+                text-align: center;
+            }
+            .results-summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-backdrop {
+                padding: 12px;
+            }
+            .modal-dialog {
+                max-width: 100%;
+            }
+            .footer-inner {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .footer-links {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="brand-group">
+                <div class="brand-icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <span class="brand-name">ConfigGuard</span>
+                <span class="brand-tag">UC-04</span>
+            </div>
+
+            <div class="nav-tabs" role="tablist" aria-label="Application views">
+                <button id="tab-run-btn" class="nav-tab-btn active" role="tab" aria-selected="true" onclick="switchView('run')">
+                    Run Tools
+                </button>
+                <button id="tab-history-btn" class="nav-tab-btn" role="tab" aria-selected="false" onclick="switchView('history')">
+                    Execution History
+                </button>
+            </div>
+
+            <div class="session-selector-group">
+                <label for="session-select-dropdown" class="session-label">Session</label>
+                <select id="session-select-dropdown" class="session-select" onchange="changeSession(this.value)" aria-label="Tenant session switch">
+                    <option value="tenant-a-operator">Tenant A (Operator, Pro)</option>
+                    <option value="tenant-a-viewer">Tenant A (Viewer, Pro)</option>
+                    <option value="tenant-b-operator">Tenant B (Operator, Basic)</option>
+                    <option value="tenant-b-viewer">Tenant B (Viewer, Basic)</option>
+                    <option value="tenant-suspended-operator">Tenant C (Suspended)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main>
+        <!-- Product Overview -->
+        <section class="product-hero">
+            <span class="product-hero-badge">Cloud Configuration Audit</span>
+            <h1 class="product-hero-title">Audit and verify configuration parity.</h1>
+            <p class="product-hero-desc">
+                ConfigGuard validates environment settings and reports differences between expected and actual values across TEST and STAGE. Basic accounts validate batches against rules R1 through R4; Pro accounts receive full difference comparisons.
+            </p>
+        </section>
+
+        <!-- Status & Quota Bar -->
+        <section class="status-bar" aria-label="Active workspace status">
+            <div class="status-metric">
+                <span class="status-metric-label">Tenant</span>
+                <div class="status-metric-value" id="disp-tenant-id">tenant-a</div>
+            </div>
+            <div class="status-metric">
+                <span class="status-metric-label">Role</span>
+                <div class="status-metric-value">
+                    <span id="disp-role-badge" class="badge-pill badge-basic">OPERATOR</span>
+                </div>
+            </div>
+            <div class="status-metric">
+                <span class="status-metric-label">Plan</span>
+                <div class="status-metric-value">
+                    <span id="disp-plan-badge" class="badge-pill badge-pro">PRO</span>
+                </div>
+            </div>
+            <div class="status-metric">
+                <span class="status-metric-label">Subscription</span>
+                <div class="status-metric-value">
+                    <span id="disp-sub-status" class="badge-pill badge-active">ACTIVE</span>
+                </div>
+            </div>
+            <div class="status-metric">
+                <span class="status-metric-label">Daily Quota (UTC)</span>
+                <div class="status-metric-value">
+                    <span id="stat-quota-used">0</span> / <span id="stat-quota-limit">10</span>
+                    <span id="quota-reset-note" style="font-size: 11px; font-weight: normal; color: var(--text-tertiary);">used</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Run Tools View -->
+        <div id="view-run-tools" class="run-view">
+            <div id="viewer-notice-callout" class="callout callout-warning" style="display: none;">
+                <strong>Read-only role:</strong> As a Viewer, you can inspect historical records and tool metadata, but starting a new execution requires Operator role permissions.
+            </div>
+
+            <div class="workspace-grid">
+                <!-- Left: Configuration Batch Form -->
+                <section class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Execute Batch</h2>
+                            <p class="card-subtitle">Validate or compare configuration records.</p>
+                        </div>
+                    </div>
+
+                    <!-- Operation Toggle -->
+                    <div class="form-section">
+                        <label class="form-label">Operation</label>
+                        <div class="op-toggle-grid">
+                            <div id="card-op-validate" class="op-card selected" onclick="selectOperation('validate')">
+                                <div class="op-card-top">
+                                    <span class="op-card-title">
+                                        <input type="radio" name="operation" id="op-validate" value="validate" checked style="accent-color: var(--accent);">
+                                        validate
+                                    </span>
+                                    <span class="op-card-tag">All Plans</span>
+                                </div>
+                                <span class="op-card-desc">Check rules R1 through R4 without generating difference reports.</span>
+                            </div>
+
+                            <div id="card-op-process" class="op-card" onclick="selectOperation('process')">
+                                <div class="op-card-top">
+                                    <span class="op-card-title">
+                                        <input type="radio" name="operation" id="op-process" value="process" style="accent-color: var(--accent);">
+                                        process
+                                    </span>
+                                    <span class="op-card-tag" style="background: var(--accent-light); color: var(--accent); border-color: var(--accent-border);">Pro Only</span>
+                                </div>
+                                <span class="op-card-desc">Validate input and generate full case-sensitive CHANGED / UNCHANGED diff.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fixtures & Records -->
+                    <div class="form-section">
+                        <div class="fixture-bar">
+                            <label for="records-json-input" class="form-label" style="margin-bottom: 0;">Batch Records (1 to 10 rows)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-subtle" onclick="loadFixture('valid')">Load Valid (2 rows)</button>
+                                <button type="button" class="btn-subtle" onclick="loadFixture('invalid')">Load Invalid (6 rows)</button>
+                            </div>
+                        </div>
+                        <textarea id="records-json-input" class="code-textarea" spellcheck="false" aria-label="JSON Configuration Batch"></textarea>
+                        <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; color: var(--text-tertiary);">
+                            <span id="row-count-indicator">2 rows loaded</span>
+                            <span>Max payload: 64 KiB</span>
+                        </div>
+                    </div>
+
+                    <!-- Idempotency & Failure Hook -->
+                    <div class="form-section">
+                        <label for="input-idempotency-key" class="form-label">Idempotency Key</label>
+                        <div class="input-row">
+                            <input type="text" id="input-idempotency-key" class="text-input" spellcheck="false" aria-label="Idempotency Key">
+                            <button type="button" class="btn-subtle" onclick="regenerateKey()">New Key</button>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="check-force-failure">
+                            <span>Simulate processing failure hook (Check A11)</span>
+                        </label>
+                    </div>
+
+                    <button id="btn-submit-run" class="btn-primary" onclick="submitRun()">
+                        <span id="btn-submit-text">Execute Run</span>
+                    </button>
+                </section>
+
+                <!-- Right: Live Result Panel -->
+                <section class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Execution Result</h2>
+                            <p class="card-subtitle" id="result-status-subtitle">Ready to receive execution response.</p>
+                        </div>
+                        <span id="badge-live-http" class="badge-pill badge-basic" style="display: none;">HTTP 200</span>
+                    </div>
+
+                    <div id="live-result-container">
+                        <div class="results-empty-state">
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="3" y1="9" x2="21" y2="9"/>
+                                <line x1="9" y1="21" x2="9" y2="9"/>
+                            </svg>
+                            <p>No batch has been executed yet. Choose an operation and select Execute Run.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- History View -->
+        <div id="view-history" class="history-view">
+            <section class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Execution History</h2>
+                        <p class="card-subtitle">Auditable record of batch runs scoped strictly to the authenticated tenant.</p>
+                    </div>
+                    <button type="button" class="btn-subtle" onclick="loadRunsHistory()">Refresh</button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Run ID</th>
+                                <th>Operation</th>
+                                <th>Status</th>
+                                <th>Created (UTC)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-tertiary); padding: 32px;">
+                                    Loading execution history...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Inspection Modal -->
+    <div id="modal-detail" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-detail-title">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="modal-detail-title" class="modal-title">Run Inspection</h3>
+                <button type="button" class="modal-close-btn" onclick="closeModal('modal-detail')" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-detail-body">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-subtle" onclick="closeModal('modal-detail')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Service Modal -->
+    <div id="modal-terms" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-terms-title">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="modal-terms-title" class="modal-title">Terms of Service (Draft)</h3>
+                <button type="button" class="modal-close-btn" onclick="closeModal('modal-terms')" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body" style="font-size: 13.5px; line-height: 1.6; color: var(--text-secondary);">
+                <p style="margin-bottom: 12px;"><strong style="color: var(--text-primary);">1. Scope of Service:</strong> ConfigGuard provides environment configuration validation and comparison services based on the Advantix SaaS specification. All evaluations operate strictly within defined subscription quotas.</p>
+                <p style="margin-bottom: 12px;"><strong style="color: var(--text-primary);">2. Tenant Isolation:</strong> Data processed under one tenant account is cryptographically and relationally isolated from other tenants. Cross-tenant access is prohibited and enforced at the API layer.</p>
+                <p style="margin-bottom: 12px;"><strong style="color: var(--text-primary);">3. Daily Quotas:</strong> Usage allowances reset daily at 00:00:00 UTC. Quota deductions occur upon acceptance of unique execution runs. Duplicate requests using identical idempotency keys do not incur additional quota deductions.</p>
+                <p><strong style="color: var(--text-primary);">4. Draft Status:</strong> This document represents a working operational policy drafted for the Advantix SaaS challenge and does not constitute a commercial warranty.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-subtle" onclick="closeModal('modal-terms')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="modal-privacy" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-privacy-title">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="modal-privacy-title" class="modal-title">Privacy Policy (Draft)</h3>
+                <button type="button" class="modal-close-btn" onclick="closeModal('modal-privacy')" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body" style="font-size: 13.5px; line-height: 1.6; color: var(--text-secondary);">
+                <p style="margin-bottom: 12px;"><strong style="color: var(--text-primary);">1. Data Ingestion:</strong> Configuration batch entries submitted to ConfigGuard are retained solely for execution evaluation and tenant-scoped history review.</p>
+                <p style="margin-bottom: 12px;"><strong style="color: var(--text-primary);">2. Request Fingerprinting:</strong> Payloads are hashed using canonical SHA-256 for deterministic idempotency verification. No credentials, tokens, or external identifiers are exposed in public endpoints.</p>
+                <p style="margin-bottom: 12px;"><strong style="color: var(--text-primary);">3. Zero External Sharing:</strong> Data submitted is processed within isolated database and container environments. No user data is transferred to third-party tracking or advertising networks.</p>
+                <p><strong style="color: var(--text-primary);">4. Retention and Teardown:</strong> Execution records persist according to tenant subscription policy and are permanently removed upon automated infrastructure cleanup.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-subtle" onclick="closeModal('modal-privacy')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div>
+                ConfigGuard UC-04 &bull; Built for the Advantix Cloud and SaaS Engineering Challenge.
+            </div>
+            <div class="footer-links">
+                <button type="button" class="footer-link" onclick="openModal('modal-terms')">Terms of Service</button>
+                <button type="button" class="footer-link" onclick="openModal('modal-privacy')">Privacy Policy</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Client-Side Application Logic -->
+    <script>
+        const VALID_FIXTURE = [
+            { "record_id": "max_retries", "expected": "3", "actual": "5", "environment": "TEST" },
+            { "record_id": "region", "expected": "us", "actual": "us", "environment": "STAGE" }
+        ];
+
+        const INVALID_FIXTURE = [
+            { "record_id": "k1", "expected": "v1", "actual": "v1", "environment": "TEST" },
+            { "record_id": "k1", "expected": "v2", "actual": "v2", "environment": "TEST" },
+            { "record_id": "k2", "expected": "this_string_is_way_too_long_and_exceeds_forty_characters_limit", "actual": "v3", "environment": "TEST" },
+            { "record_id": "k3", "expected": "v4", "actual": "   ", "environment": "STAGE" },
+            { "record_id": "k4", "expected": "v5", "actual": "v5", "environment": "PROD" },
+            { "record_id": "record_id_is_greater_than_twenty_characters", "expected": "v6", "actual": "v6", "environment": "STAGE" }
+        ];
+
+        let currentSessionToken = 'tenant-a-operator';
+        let currentSessionData = {
+            tenantID: 'tenant-a',
+            role: 'Operator',
+            plan: 'pro',
+            status: 'active'
+        };
+
+        function switchView(view) {
+            const runView = document.getElementById('view-run-tools');
+            const historyView = document.getElementById('view-history');
+            const tabRun = document.getElementById('tab-run-btn');
+            const tabHistory = document.getElementById('tab-history-btn');
+
+            if (view === 'run') {
+                runView.classList.remove('hidden');
+                historyView.classList.remove('active');
+                tabRun.classList.add('active');
+                tabRun.setAttribute('aria-selected', 'true');
+                tabHistory.classList.remove('active');
+                tabHistory.setAttribute('aria-selected', 'false');
+            } else {
+                runView.classList.add('hidden');
+                historyView.classList.add('active');
+                tabRun.classList.remove('active');
+                tabRun.setAttribute('aria-selected', 'false');
+                tabHistory.classList.add('active');
+                tabHistory.setAttribute('aria-selected', 'true');
+                loadRunsHistory();
+            }
+        }
+
+        function changeSession(token) {
+            currentSessionToken = token;
+            if (token === 'tenant-a-operator') {
+                currentSessionData = { tenantID: 'tenant-a', role: 'Operator', plan: 'pro', status: 'active' };
+            } else if (token === 'tenant-a-viewer') {
+                currentSessionData = { tenantID: 'tenant-a', role: 'Viewer', plan: 'pro', status: 'active' };
+            } else if (token === 'tenant-b-operator') {
+                currentSessionData = { tenantID: 'tenant-b', role: 'Operator', plan: 'basic', status: 'active' };
+            } else if (token === 'tenant-b-viewer') {
+                currentSessionData = { tenantID: 'tenant-b', role: 'Viewer', plan: 'basic', status: 'active' };
+            } else if (token === 'tenant-suspended-operator') {
+                currentSessionData = { tenantID: 'tenant-suspended', role: 'Operator', plan: 'pro', status: 'suspended' };
+            }
+
+            document.getElementById('disp-tenant-id').textContent = currentSessionData.tenantID;
+            
+            const rBadge = document.getElementById('disp-role-badge');
+            rBadge.textContent = currentSessionData.role.toUpperCase();
+            
+            const pBadge = document.getElementById('disp-plan-badge');
+            pBadge.textContent = currentSessionData.plan.toUpperCase();
+            pBadge.className = currentSessionData.plan === 'pro' ? 'badge-pill badge-pro' : 'badge-pill badge-basic';
+
+            const sBadge = document.getElementById('disp-sub-status');
+            sBadge.textContent = currentSessionData.status.toUpperCase();
+            sBadge.className = currentSessionData.status === 'active' ? 'badge-pill badge-active' : 'badge-pill badge-suspended';
+
+            const btnSubmit = document.getElementById('btn-submit-run');
+            const noticeCallout = document.getElementById('viewer-notice-callout');
+
+            if (currentSessionData.role === 'Viewer') {
+                btnSubmit.disabled = true;
+                noticeCallout.style.display = 'flex';
+            } else {
+                btnSubmit.disabled = false;
+                noticeCallout.style.display = 'none';
+            }
+
+            refreshSubscription();
+        }
+
+        function selectOperation(op) {
+            const cardVal = document.getElementById('card-op-validate');
+            const cardProc = document.getElementById('card-op-process');
+            const radioVal = document.getElementById('op-validate');
+            const radioProc = document.getElementById('op-process');
+
+            if (op === 'validate') {
+                radioVal.checked = true;
+                cardVal.classList.add('selected');
+                cardProc.classList.remove('selected');
+            } else {
+                radioProc.checked = true;
+                cardProc.classList.add('selected');
+                cardVal.classList.remove('selected');
+            }
+        }
+
+        function loadFixture(type) {
+            const data = type === 'valid' ? VALID_FIXTURE : INVALID_FIXTURE;
+            document.getElementById('records-json-input').value = JSON.stringify(data, null, 2);
+            document.getElementById('row-count-indicator').textContent = `${data.length} rows loaded`;
+        }
+
+        function regenerateKey() {
+            const id = 'key-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now().toString(36);
+            document.getElementById('input-idempotency-key').value = id;
+        }
+
+        async function refreshSubscription() {
+            try {
+                const res = await fetch('/subscription', {
+                    headers: { 'Authorization': `Bearer ${currentSessionToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('stat-quota-used').textContent = data.quota_used !== undefined ? data.quota_used : (data.daily_limit - data.remaining_today);
+                    document.getElementById('stat-quota-limit').textContent = data.quota_limit !== undefined ? data.quota_limit : data.daily_limit;
+                }
+            } catch (err) {
+                console.error("Failed to refresh subscription status:", err);
+            }
+        }
+
+        async function submitRun() {
+            const btn = document.getElementById('btn-submit-run');
+            const btnText = document.getElementById('btn-submit-text');
+            const resultBox = document.getElementById('live-result-container');
+            const badgeHttp = document.getElementById('badge-live-http');
+            const subTitle = document.getElementById('result-status-subtitle');
+
+            btn.disabled = true;
+            btnText.textContent = "Executing...";
+
+            try {
+                const rawJson = document.getElementById('records-json-input').value;
+                const records = JSON.parse(rawJson);
+                const operation = document.querySelector('input[name="operation"]:checked').value;
+                const idempotencyKey = document.getElementById('input-idempotency-key').value;
+                const forceFailure = document.getElementById('check-force-failure').checked;
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentSessionToken}`,
+                    'Idempotency-Key': idempotencyKey
+                };
+                if (forceFailure) {
+                    headers['X-Test-Force-Failure'] = 'true';
+                }
+
+                const res = await fetch('/runs', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ operation, records })
+                });
+
+                const data = await res.json();
+
+                badgeHttp.style.display = 'inline-flex';
+                badgeHttp.textContent = `HTTP ${res.status}`;
+                subTitle.textContent = `Response status: ${res.status} ${res.statusText}`;
+
+                if (res.status === 201 || res.status === 200) {
+                    badgeHttp.className = res.status === 200 ? 'badge-pill badge-pro' : 'badge-pill badge-active';
+                    renderResultView(resultBox, data, res.status === 200);
+                } else {
+                    badgeHttp.className = 'badge-pill badge-suspended';
+                    resultBox.innerHTML = `
+                        <div class="callout callout-error" style="margin-top: 8px;">
+                            <div>
+                                <strong style="display: block; margin-bottom: 4px;">Request Rejected (${res.status})</strong>
+                                <pre style="font-family: var(--font-mono); font-size: 11.5px; overflow-x: auto; margin-top: 6px;">${JSON.stringify(data, null, 2)}</pre>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                resultBox.innerHTML = `
+                    <div class="callout callout-error">
+                        <strong>Client Error:</strong> ${escapeHtml(err.message)}
+                    </div>
+                `;
+            } finally {
+                btn.disabled = currentSessionData.role === 'Viewer';
+                btnText.textContent = "Execute Run";
+                refreshSubscription();
+            }
+        }
+
+        function renderResultView(container, data, isReplay) {
+            let html = `
+                <div style="margin-bottom: 14px;">
+                    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary);">
+                        ${isReplay ? 'Replayed Run ID (Cached Replay)' : 'Run ID'}
+                    </div>
+                    <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--accent); margin-top: 2px;">
+                        ${escapeHtml(data.run_id)}
+                    </div>
+                </div>
+            `;
+
+            if (data.status === 'Failed' || data.error) {
+                html += `
+                    <div class="callout callout-error">
+                        <div>
+                            <strong>Execution Failure Recorded:</strong>
+                            <div style="margin-top: 4px; font-family: var(--font-mono); font-size: 12px;">${escapeHtml(data.error || 'Simulated failure hook triggered')}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (data.result) {
+                const res = data.result;
+
+                if (res.summary) {
+                    html += `
+                        <div class="results-summary-grid">
+                            <div class="summary-metric-card">
+                                <div class="summary-metric-num">${res.summary.input_rows}</div>
+                                <div class="summary-metric-lbl">Input Rows</div>
+                            </div>
+                            <div class="summary-metric-card changed">
+                                <div class="summary-metric-num">${res.summary.changed_rows}</div>
+                                <div class="summary-metric-lbl">Changed</div>
+                            </div>
+                            <div class="summary-metric-card unchanged">
+                                <div class="summary-metric-num">${res.summary.unchanged_rows}</div>
+                                <div class="summary-metric-lbl">Unchanged</div>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Record ID</th>
+                                        <th>Expected</th>
+                                        <th>Actual</th>
+                                        <th>Env</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${res.rows.map(r => `
+                                        <tr class="${r.comparison === 'CHANGED' ? 'row-changed' : ''}">
+                                            <td style="font-weight: 600;">${escapeHtml(r.record_id)}</td>
+                                            <td>${escapeHtml(r.expected)}</td>
+                                            <td>${escapeHtml(r.actual)}</td>
+                                            <td>${escapeHtml(r.environment)}</td>
+                                            <td>
+                                                <span class="status-pill ${r.comparison === 'CHANGED' ? 'changed' : 'unchanged'}">
+                                                    ${escapeHtml(r.comparison)}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else if (res.valid_rows !== undefined) {
+                    html += `
+                        <div class="results-summary-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="summary-metric-card unchanged">
+                                <div class="summary-metric-num">${res.valid_rows}</div>
+                                <div class="summary-metric-lbl">Valid Rows</div>
+                            </div>
+                            <div class="summary-metric-card ${res.invalid_rows > 0 ? 'invalid' : ''}">
+                                <div class="summary-metric-num">${res.invalid_rows}</div>
+                                <div class="summary-metric-lbl">Invalid Rows</div>
+                            </div>
+                        </div>
+                    `;
+
+                    if (res.issues && res.issues.length > 0) {
+                        html += `
+                            <div class="table-wrapper" style="margin-top: 12px;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Line</th>
+                                            <th>Field</th>
+                                            <th>Rule Violation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${res.issues.map(iss => `
+                                            <tr>
+                                                <td>#${iss.row_index || iss.line}</td>
+                                                <td>${escapeHtml(iss.field || iss.record_id)}</td>
+                                                <td><span class="status-pill invalid">${escapeHtml(iss.rule_id || iss.reason)}</span></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function loadRunsHistory() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-tertiary); padding: 32px;">Loading execution history...</td></tr>`;
+
+            try {
+                const res = await fetch('/runs', {
+                    headers: { 'Authorization': `Bearer ${currentSessionToken}` }
+                });
+                if (!res.ok) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 24px;">Failed to load runs (${res.status})</td></tr>`;
+                    return;
+                }
+
+                const runs = await res.json();
+                if (!runs || runs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-tertiary); padding: 32px;">No historical runs recorded for this tenant.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = runs.map(run => `
+                    <tr>
+                        <td style="font-weight: 600; color: var(--accent);">${escapeHtml(run.id || run.run_id)}</td>
+                        <td>${escapeHtml(run.operation)}</td>
+                        <td>
+                            <span class="status-pill ${run.status === 'Succeeded' ? 'unchanged' : 'invalid'}">
+                                ${escapeHtml(run.status)}
+                            </span>
+                        </td>
+                        <td>${new Date(run.created_at).toLocaleString()}</td>
+                        <td>
+                            <button type="button" class="btn-subtle" onclick="inspectRun('${escapeHtml(run.id || run.run_id)}')">Inspect</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 24px;">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function inspectRun(runId) {
+            const modalBody = document.getElementById('modal-detail-body');
+            modalBody.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-tertiary);">Loading run details...</div>`;
+            openModal('modal-detail');
+
+            try {
+                const res = await fetch(`/runs/${runId}/result`, {
+                    headers: { 'Authorization': `Bearer ${currentSessionToken}` }
+                });
+                const data = await res.json();
+                modalBody.innerHTML = `
+                    <div style="margin-bottom: 16px;">
+                        <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary);">Run Identifier</span>
+                        <div style="font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--accent);">${escapeHtml(runId)}</div>
+                    </div>
+                    <pre style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 14px; font-family: var(--font-mono); font-size: 12px; overflow-x: auto; color: var(--text-primary);">${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (err) {
+                modalBody.innerHTML = `<div class="callout callout-error">Failed to inspect run: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-backdrop.active').forEach(m => m.classList.remove('active'));
+            }
+        });
+
+        document.querySelectorAll('.modal-backdrop').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFixture('valid');
+            regenerateKey();
+            refreshSubscription();
+        });
+    </script>
+</body>
+</html>
