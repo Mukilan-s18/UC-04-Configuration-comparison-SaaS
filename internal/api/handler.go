@@ -238,3 +238,123 @@ func (h *APIHandler) CreateRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Strictly validate each record row shape
+	var records []domain.UC04Record
+	for rowIdx, rawRow := range recList {
+		rowMap, ok := rawRow.(map[string]any)
+		if !ok {
+			h.writeJSONError(w, http.StatusBadRequest, fmt.Sprintf("Row %d must be a JSON object", rowIdx+1))
+			return
+		}
+
+		for k := range rowMap {
+			if k != "record_id" && k != "expected" && k != "actual" && k != "environment" {
+				h.writeJSONError(w, http.StatusBadRequest, fmt.Sprintf("Row %d has unexpected field '%s'", rowIdx+1, k))
+				return
+			}
+		}
+
+		ridVal, hasRid := rowMap["record_id"]
+		expVal, hasExp := rowMap["expected"]
+		actVal, hasAct := rowMap["actual"]
+		envVal, hasEnv := rowMap["environment"]
+
+		if !hasRid || !hasExp || !hasAct || !hasEnv {
+			h.writeJSONError(w, http.StatusBadRequest, fmt.Sprintf("Row %d is missing required fields", rowIdx+1))
+			return
+		}
+
+		ridStr, ok1 := ridVal.(string)
+		expStr, ok2 := expVal.(string)
+		actStr, ok3 := actVal.(string)
+		envStr, ok4 := envVal.(string)
+
+		if !ok1 || !ok2 || !ok3 || !ok4 {
+			h.writeJSONError(w, http.StatusBadRequest, fmt.Sprintf("Row %d contains non-string fields (booleans/numbers not permitted)", rowIdx+1))
+			return
+		}
+
+		records = append(records, domain.UC04Record{
+			RecordID:    ridStr,
+			Expected:    expStr,
+			Actual:      actStr,
+			Environment: envStr,
+		})
+	}
+
+	req := domain.RunRequest{
+		Operation: operation,
+		Records:   records,
+	}
+	inputFingerprint := req.ComputeFingerprint()
+
+	// 8. Check Idempotency Replay BEFORE enforcing remaining quota!
+	existingRun, err := h.repo.CheckExistingReplay(r.Context(), session.TenantID, idempotencyKey)
+	if err != nil {
+		h.writeJSONError(w, http.StatusInternalServerError, "Failed to check idempotency")
+		return
+	}
+
+	if existingRun != nil {
+		// Matching key + changed input returns 409
+		if existingRun.InputFingerprint != inputFingerprint || existingRun.Operation != operation {
+			h.writeJSONError(w, http.StatusConflict, "Idempotency key reused with different operation or input")
+			return
+		}
+
+		// Replay still Running returns 409 RUN_IN_PROGRESS
+		if existingRun.Status == domain.RunStatusRunning {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "RUN_IN_PROGRESS"})
+			return
+		}
+
+		// Matching terminal replay returns 200 without quota debit
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		resp := domain.RunResponse{
+			RunID:  existingRun.RunID,
+			Status: existingRun.Status,
+			Result: existingRun.Result,
+			Error:  existingRun.ErrorMessage,
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+		return
+	}
+
+	// 9. If operation is process, pre-check row validation rules:
+	// "process rejects any invalid row with 400; otherwise save the helper output: summary, rows and issues [].
+	// The process operation must reject this batch before quota is debited."
+	if operation == domain.OpProcess {
+		valRes := h.engine.ValidateBatch(records)
+		if valRes.InvalidRows > 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"error":        "Validation failed on process batch",
+				"valid_rows":   valRes.ValidRows,
+				"invalid_rows": valRes.InvalidRows,
+				"issues":       valRes.Issues,
+			})
+			return
+		}
+	}
+
+	// 10. Reserve slot atomically when accepting a new run
+	maxQuota := domain.ProDailyQuota
+	if session.Plan == domain.PlanBasic {
+		maxQuota = domain.BasicDailyQuota
+	}
+
+	newRun := &domain.Run{
+		RunID:            uuid.New().String(),
+		TenantID:         session.TenantID,
+		IdempotencyKey:   idempotencyKey,
+		Operation:        operation,
+		InputFingerprint: inputFingerprint,
+		Status:           domain.RunStatusRunning,
+	}
+
+	if err := h.repo.ReserveSlotAndCreateRun(r.Context(), newRun, maxQuota); err != nil {
+		if errors.Is(err, repository.ErrQuotaExceeded) {
