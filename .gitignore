@@ -1,0 +1,25 @@
+# Binaries & compiled servers
+bin/
+saas-server
+/server
+
+# Local databases & WAL journals
+*.db
+*.db-wal
+*.db-shm
+test_*.db
+
+# Terraform state & cache
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+
+# Specification PDF (excluded from repository history)
+*.pdf
+UC-04_config-comparison.pdf
+
+# OS & editor artifacts
+.DS_Store
