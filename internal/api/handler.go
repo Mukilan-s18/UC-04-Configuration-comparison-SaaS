@@ -458,3 +458,80 @@ func (h *APIHandler) GetRunResult(w http.ResponseWriter, r *http.Request) {
 	// Path parsing: /runs/{id}/result
 	runID := r.PathValue("id")
 	if runID == "" {
+		path := strings.TrimPrefix(r.URL.Path, "/runs/")
+		runID = strings.TrimSuffix(path, "/result")
+		runID = strings.Trim(runID, "/")
+	}
+
+	if runID == "" {
+		h.writeJSONError(w, http.StatusBadRequest, "Missing run ID")
+		return
+	}
+
+	run, err := h.repo.GetRunByID(r.Context(), session.TenantID, runID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			h.writeJSONError(w, http.StatusNotFound, "Run not found")
+			return
+		}
+		h.writeJSONError(w, http.StatusInternalServerError, "Failed to fetch run")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	resp := domain.RunResponse{
+		RunID:  run.RunID,
+		Status: run.Status,
+	}
+
+	if run.Status == domain.RunStatusFailed {
+		resp.Error = run.ErrorMessage
+	} else {
+		resp.Result = run.Result
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// Harness helper handlers (used only by automated test suite / harness)
+func (h *APIHandler) HarnessReset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if err := h.repo.ResetHarness(r.Context()); err != nil {
+		h.writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"reset_ok"}`))
+}
+
+func (h *APIHandler) HarnessSetTenantStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	tenantID := r.URL.Query().Get("tenant_id")
+	status := r.URL.Query().Get("status")
+	if tenantID == "" || (status != domain.StatusActive && status != domain.StatusSuspended) {
+		h.writeJSONError(w, http.StatusBadRequest, "Invalid tenant_id or status")
+		return
+	}
+	if err := h.repo.SetTenantStatus(r.Context(), tenantID, status); err != nil {
+		h.writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"status_updated"}`))
+}
+
+func (h *APIHandler) writeJSONError(w http.ResponseWriter, statusCode int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"error": message,
+	})
+}
