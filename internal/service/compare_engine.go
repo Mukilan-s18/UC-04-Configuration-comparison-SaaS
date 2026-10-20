@@ -33,6 +33,26 @@ func (e *CompareEngine) ValidateBatch(records []domain.UC04Record) domain.Valida
 
 		// R1: record_id is a nonempty string of at most 20 characters and is unique within the batch.
 		// Note: rawRec.RecordID is case-sensitive.
+		if rawRec.RecordID == "" || len(recID) == 0 || len(rawRec.RecordID) > 20 {
+			issues = append(issues, domain.Issue{
+				RowIndex: rowIndex,
+				Field:    "record_id",
+				RuleID:   "R1",
+			})
+			rowHasError = true
+		} else if seenIDs[rawRec.RecordID] {
+			// Duplicate ID (only later occurrences are duplicates)
+			issues = append(issues, domain.Issue{
+				RowIndex: rowIndex,
+				Field:    "record_id",
+				RuleID:   "R1",
+			})
+			rowHasError = true
+		} else {
+			seenIDs[rawRec.RecordID] = true
+		}
+
+		// R2: expected is a string of 1 to 40 characters after trimming spaces.
 
 	return domain.ValidationResult{}
 }
