@@ -53,6 +53,25 @@ func (e *CompareEngine) ValidateBatch(records []domain.UC04Record) domain.Valida
 		}
 
 		// R2: expected is a string of 1 to 40 characters after trimming spaces.
+		if len(expected) < 1 || len(expected) > 40 {
+			issues = append(issues, domain.Issue{
+				RowIndex: rowIndex,
+				Field:    "expected",
+				RuleID:   "R2",
+			})
+			rowHasError = true
+		}
+
+		// R3: actual is a string of 1 to 40 characters after trimming spaces.
+		if len(actual) < 1 || len(actual) > 40 {
+			issues = append(issues, domain.Issue{
+				RowIndex: rowIndex,
+				Field:    "actual",
+				RuleID:   "R3",
+			})
+			rowHasError = true
+		}
+
 
 	return domain.ValidationResult{}
 }
