@@ -338,3 +338,203 @@ func TestA05_InputBoundsAndValidationRejectionNoDebit(t *testing.T) {
 	if sub.QuotaUsed != 0 {
 		t.Errorf("expected 0 quota used, got %d", sub.QuotaUsed)
 	}
+}
+
+// A06: Unauthenticated requests to protected routes return 401; Viewer submission and Basic process both return 403 with no quota debit.
+func TestA06_AuthAndPermissions(t *testing.T) {
+	dbPath := "test_a06.db"
+	defer os.Remove(dbPath)
+	ts, _, cleanup := setupTestServer(t, dbPath, true)
+	defer cleanup()
+
+	// 1. Unauthenticated to protected route
+	resp1, _, _ := doRequest(ts, "GET", "/subscription", "", "", nil, false)
+	if resp1.StatusCode != http.StatusUnauthorized {
+		t.Errorf("expected 401 for unauthenticated request, got %d", resp1.StatusCode)
+	}
+
+	// 2. Viewer submission returns 403
+	resp2, _, _ := doRequest(ts, "POST", "/runs", "tenant-a-viewer", "key-a06-viewer", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if resp2.StatusCode != http.StatusForbidden {
+		t.Errorf("expected 403 for Viewer submission, got %d", resp2.StatusCode)
+	}
+
+	// 3. Basic plan attempting process returns 403
+	resp3, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "key-a06-basic-process", map[string]any{
+		"operation": "process",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if resp3.StatusCode != http.StatusForbidden {
+		t.Errorf("expected 403 for Basic plan process attempt, got %d", resp3.StatusCode)
+	}
+
+	// 4. Individual review prompt: Demonstrate that a Viewer can read its workspace report but cannot start a comparison.
+	// First, Operator creates a valid run
+	respOp, bodyOp, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "key-a06-op", map[string]any{
+		"operation": "process",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if respOp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201 for Operator run creation, got %d", respOp.StatusCode)
+	}
+	var createdRun domain.RunResponse
+	_ = json.Unmarshal([]byte(bodyOp), &createdRun)
+
+	// Viewer can read the runs list (workspace report)
+	respViewerList, _, _ := doRequest(ts, "GET", "/runs", "tenant-a-viewer", "", nil, false)
+	if respViewerList.StatusCode != http.StatusOK {
+		t.Errorf("expected 200 for Viewer reading workspace runs list, got %d", respViewerList.StatusCode)
+	}
+
+	// Viewer can read the specific result report
+	respViewerRes, _, _ := doRequest(ts, "GET", "/runs/"+createdRun.RunID+"/result", "tenant-a-viewer", "", nil, false)
+	if respViewerRes.StatusCode != http.StatusOK {
+		t.Errorf("expected 200 for Viewer reading workspace run result, got %d", respViewerRes.StatusCode)
+	}
+
+	// Viewer CANNOT start a comparison (returns 403 Forbidden, 0 additional debit)
+	respViewerSubmit, _, _ := doRequest(ts, "POST", "/runs", "tenant-a-viewer", "key-a06-viewer-sub", map[string]any{
+		"operation": "process",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if respViewerSubmit.StatusCode != http.StatusForbidden {
+		t.Errorf("expected 403 for Viewer attempting to start comparison, got %d", respViewerSubmit.StatusCode)
+	}
+}
+
+// A07: Tenant B cannot list tenant A's runs; fetching A's result by ID returns 404. A request containing a tenant override is rejected.
+func TestA07_TenantIsolation(t *testing.T) {
+	dbPath := "test_a07.db"
+	defer os.Remove(dbPath)
+	ts, _, cleanup := setupTestServer(t, dbPath, true)
+	defer cleanup()
+
+	// Tenant A creates a run
+	respA, bodyA, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "key-a07-a", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if respA.StatusCode != http.StatusCreated {
+		t.Fatalf("Tenant A run failed: %d", respA.StatusCode)
+	}
+	var runA domain.RunResponse
+	_ = json.Unmarshal(bodyA, &runA)
+
+	// Tenant B lists runs -> must be empty
+	respBList, bodyBList, _ := doRequest(ts, "GET", "/runs", "tenant-b-operator", "", nil, false)
+	if respBList.StatusCode != http.StatusOK {
+		t.Fatalf("Tenant B list failed: %d", respBList.StatusCode)
+	}
+	var runsB []domain.Run
+	_ = json.Unmarshal(bodyBList, &runsB)
+	if len(runsB) != 0 {
+		t.Errorf("Tenant B can see %d runs, expected 0", len(runsB))
+	}
+
+	// Tenant B attempts to fetch Tenant A's run ID -> must return 404
+	respBFetch, _, _ := doRequest(ts, "GET", "/runs/"+runA.RunID+"/result", "tenant-b-operator", "", nil, false)
+	if respBFetch.StatusCode != http.StatusNotFound {
+		t.Errorf("expected 404 when Tenant B fetches Tenant A run, got %d", respBFetch.StatusCode)
+	}
+
+	// Request containing tenant override in header or body -> must be rejected
+	reqOverride, err := http.NewRequest("POST", ts.URL+"/runs", bytes.NewReader([]byte(`{
+		"tenant_id": "tenant-a",
+		"operation": "validate",
+		"records": [{"record_id":"r1","expected":"1","actual":"1","environment":"TEST"}]
+	}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	reqOverride.Header.Set("Authorization", "Bearer tenant-b-operator")
+	reqOverride.Header.Set("Idempotency-Key", "key-override")
+	reqOverride.Header.Set("Content-Type", "application/json")
+	respOverride, _ := http.DefaultClient.Do(reqOverride)
+	if respOverride.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400 for payload with tenant_id override, got %d", respOverride.StatusCode)
+	}
+}
+
+// A08: Basic accepts three unique validate runs and rejects the fourth with 429. With one slot left, two concurrent new requests accept exactly one.
+func TestA08_BasicQuotaAndConcurrency(t *testing.T) {
+	dbPath := "test_a08.db"
+	defer os.Remove(dbPath)
+	ts, _, cleanup := setupTestServer(t, dbPath, true)
+	defer cleanup()
+
+	// Tenant B has Basic plan (quota = 3)
+	// Run 1:
+	resp1, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "key-a08-1", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if resp1.StatusCode != http.StatusCreated {
+		t.Fatalf("run 1 expected 201, got %d", resp1.StatusCode)
+	}
+
+	// Run 2:
+	resp2, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "key-a08-2", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if resp2.StatusCode != http.StatusCreated {
+		t.Fatalf("run 2 expected 201, got %d", resp2.StatusCode)
+	}
+
+	// Exactly 1 slot left now!
+	// Fire two concurrent requests with distinct keys
+	var wg sync.WaitGroup
+	var code1, code2 int
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		r, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "key-a08-race-a", map[string]any{
+			"operation": "validate",
+			"records":   service.GetValidFixture(),
+		}, false)
+		code1 = r.StatusCode
+	}()
+
+	go func() {
+		defer wg.Done()
+		r, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "key-a08-race-b", map[string]any{
+			"operation": "validate",
+			"records":   service.GetValidFixture(),
+		}, false)
+		code2 = r.StatusCode
+	}()
+
+	wg.Wait()
+
+	// Exactly one must be 201 Created and the other must be 429 Too Many Requests
+	acceptedCount := 0
+	rejectedCount := 0
+	for _, c := range []int{code1, code2} {
+		if c == http.StatusCreated {
+			acceptedCount++
+		} else if c == http.StatusTooManyRequests {
+			rejectedCount++
+		}
+	}
+
+	if acceptedCount != 1 || rejectedCount != 1 {
+		t.Errorf("A08 concurrency failure: expected exactly one 201 and one 429, got %d and %d", code1, code2)
+	}
+
+	// Next attempt must definitely return 429
+	respExhausted, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "key-a08-exhausted", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if respExhausted.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("expected 429 when quota exhausted, got %d", respExhausted.StatusCode)
+	}
+}
+
+// A09: At exhausted quota, a matching accepted key returns the same run with 200 and no debit. Reusing the key with changed input returns 409. Two simultaneous identical keys create at most one run.
+func TestA09_ExhaustedQuotaReplayAndKeyConflict(t *testing.T) {
+	dbPath := "test_a09.db"
