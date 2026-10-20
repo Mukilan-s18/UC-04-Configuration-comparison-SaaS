@@ -538,3 +538,198 @@ func TestA08_BasicQuotaAndConcurrency(t *testing.T) {
 // A09: At exhausted quota, a matching accepted key returns the same run with 200 and no debit. Reusing the key with changed input returns 409. Two simultaneous identical keys create at most one run.
 func TestA09_ExhaustedQuotaReplayAndKeyConflict(t *testing.T) {
 	dbPath := "test_a09.db"
+	defer os.Remove(dbPath)
+	ts, repo, cleanup := setupTestServer(t, dbPath, true)
+	defer cleanup()
+
+	// Fill Basic quota (3 runs)
+	for i := 1; i <= 3; i++ {
+		key := fmt.Sprintf("accepted-key-%d", i)
+		r, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", key, map[string]any{
+			"operation": "validate",
+			"records":   service.GetValidFixture(),
+		}, false)
+		if r.StatusCode != http.StatusCreated {
+			t.Fatalf("setup run %d failed: %d", i, r.StatusCode)
+		}
+	}
+
+	// Quota is now 3/3 (exhausted)
+	// 1. Replay of an accepted key returns 200 without debit
+	rReplay, bodyReplay, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "accepted-key-1", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if rReplay.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 for matching replay at exhausted quota, got %d", rReplay.StatusCode)
+	}
+	var replayResp domain.RunResponse
+	_ = json.Unmarshal(bodyReplay, &replayResp)
+	if replayResp.Status != "Succeeded" {
+		t.Errorf("expected Succeeded status on replay, got %s", replayResp.Status)
+	}
+
+	// Verify quota is STILL 3
+	sub, _ := repo.GetSubscriptionInfo(context.Background(), "tenant-b")
+	if sub.QuotaUsed != 3 {
+		t.Errorf("quota incremented on replay: %d", sub.QuotaUsed)
+	}
+
+	// 2. Reusing the key with changed input returns 409
+	changedRecords := []domain.UC04Record{
+		{RecordID: "changed_id", Expected: "1", Actual: "1", Environment: "TEST"},
+	}
+	rConflict, _, _ := doRequest(ts, "POST", "/runs", "tenant-b-operator", "accepted-key-1", map[string]any{
+		"operation": "validate",
+		"records":   changedRecords,
+	}, false)
+	if rConflict.StatusCode != http.StatusConflict {
+		t.Errorf("expected 409 when reusing key with changed input, got %d", rConflict.StatusCode)
+	}
+
+	// 3. Two simultaneous identical keys create at most one run
+	// Reset harness and test concurrency on identical key
+	_ = repo.ResetHarness(context.Background())
+	var wg sync.WaitGroup
+	var codeA, codeB int
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		r, _, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "identical-simultaneous-key", map[string]any{
+			"operation": "validate",
+			"records":   service.GetValidFixture(),
+		}, false)
+		codeA = r.StatusCode
+	}()
+
+	go func() {
+		defer wg.Done()
+		r, _, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "identical-simultaneous-key", map[string]any{
+			"operation": "validate",
+			"records":   service.GetValidFixture(),
+		}, false)
+		codeB = r.StatusCode
+	}()
+
+	wg.Wait()
+
+	// Both requests return valid codes (201 Created or 200 Replay or 409 In Progress)
+	if (codeA != http.StatusCreated && codeA != http.StatusOK && codeA != http.StatusConflict) ||
+		(codeB != http.StatusCreated && codeB != http.StatusOK && codeB != http.StatusConflict) {
+		t.Errorf("unexpected status codes: codeA=%d, codeB=%d", codeA, codeB)
+	}
+
+	// At most 1 run created and exactly 1 quota slot used
+	subA, _ := repo.GetSubscriptionInfo(context.Background(), "tenant-a")
+	if subA.QuotaUsed != 1 {
+		t.Errorf("expected exactly 1 quota debit for identical concurrent keys, got %d", subA.QuotaUsed)
+	}
+	runs, _ := repo.ListRuns(context.Background(), "tenant-a")
+	if len(runs) != 1 {
+		t.Errorf("expected 1 run in database, got %d", len(runs))
+	}
+}
+
+// A10: The harness suspends the subscription: new submissions return 403 and debit nothing; authorised historical reads continue to work.
+func TestA10_SuspendedSubscription(t *testing.T) {
+	dbPath := "test_a10.db"
+	defer os.Remove(dbPath)
+	ts, repo, cleanup := setupTestServer(t, dbPath, true)
+	defer cleanup()
+
+	// Tenant A creates a run while active
+	r1, body1, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "key-a10-active", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if r1.StatusCode != http.StatusCreated {
+		t.Fatalf("active run failed: %d", r1.StatusCode)
+	}
+	var run1 domain.RunResponse
+	_ = json.Unmarshal(body1, &run1)
+
+	// Harness suspends the subscription
+	_ = repo.SetTenantStatus(context.Background(), "tenant-a", domain.StatusSuspended)
+
+	// New submission returns 403 and debits nothing
+	r2, _, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "key-a10-suspended", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+	if r2.StatusCode != http.StatusForbidden {
+		t.Errorf("expected 403 for suspended tenant submission, got %d", r2.StatusCode)
+	}
+
+	// Authorised historical reads continue to work!
+	rRead, bodyRead, _ := doRequest(ts, "GET", "/runs/"+run1.RunID+"/result", "tenant-a-operator", "", nil, false)
+	if rRead.StatusCode != http.StatusOK {
+		t.Errorf("historical read failed on suspended subscription: %d", rRead.StatusCode)
+	}
+	var readResp domain.RunResponse
+	_ = json.Unmarshal(bodyRead, &readResp)
+	if readResp.RunID != run1.RunID {
+		t.Errorf("expected runID %s, got %s", run1.RunID, readResp.RunID)
+	}
+
+	// Historical list continues to work
+	rList, _, _ := doRequest(ts, "GET", "/runs", "tenant-a-operator", "", nil, false)
+	if rList.StatusCode != http.StatusOK {
+		t.Errorf("historical list failed on suspended subscription: %d", rList.StatusCode)
+	}
+}
+
+// A11: The shared hook forces a processing failure after acceptance: the run is Failed, the error is recorded and one slot is used. Replaying its key returns that failure without re-execution.
+func TestA11_ForcedFailureHook(t *testing.T) {
+	dbPath := "test_a11.db"
+	defer os.Remove(dbPath)
+	ts, repo, cleanup := setupTestServer(t, dbPath, true)
+	defer cleanup()
+
+	// Submit with X-Test-Force-Failure: true
+	rFail, bodyFail, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "key-a11-forced", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, true)
+
+	if rFail.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201 Created for accepted run with forced failure, got %d", rFail.StatusCode)
+	}
+
+	var failResp domain.RunResponse
+	_ = json.Unmarshal(bodyFail, &failResp)
+	if failResp.Status != "Failed" {
+		t.Errorf("expected status Failed, got %s", failResp.Status)
+	}
+	if failResp.Error == "" {
+		t.Errorf("expected recorded error on Failed run, got empty")
+	}
+
+	// One quota slot is used!
+	sub, _ := repo.GetSubscriptionInfo(context.Background(), "tenant-a")
+	if sub.QuotaUsed != 1 {
+		t.Errorf("expected quota used 1, got %d", sub.QuotaUsed)
+	}
+
+	// Replaying its key returns that failure without re-execution (200 OK)
+	rReplay, bodyReplay, _ := doRequest(ts, "POST", "/runs", "tenant-a-operator", "key-a11-forced", map[string]any{
+		"operation": "validate",
+		"records":   service.GetValidFixture(),
+	}, false)
+
+	if rReplay.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 OK on replay of failed run, got %d", rReplay.StatusCode)
+	}
+
+	var replayResp domain.RunResponse
+	_ = json.Unmarshal(bodyReplay, &replayResp)
+	if replayResp.Status != "Failed" || replayResp.Error != failResp.Error {
+		t.Errorf("replay did not return recorded failure: %+v", replayResp)
+	}
+
+	// Quota is STILL 1
+	subAfter, _ := repo.GetSubscriptionInfo(context.Background(), "tenant-a")
+	if subAfter.QuotaUsed != 1 {
+		t.Errorf("expected quota to remain 1 after replay, got %d", subAfter.QuotaUsed)
+	}
+}
