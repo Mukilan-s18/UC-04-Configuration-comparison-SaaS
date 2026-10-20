@@ -72,6 +72,20 @@ func (e *CompareEngine) ValidateBatch(records []domain.UC04Record) domain.Valida
 			rowHasError = true
 		}
 
+		// R4: environment is TEST or STAGE.
+		if env != "TEST" && env != "STAGE" {
+			issues = append(issues, domain.Issue{
+				RowIndex: rowIndex,
+				Field:    "environment",
+				RuleID:   "R4",
+			})
+			rowHasError = true
+		}
+
+		if rowHasError {
+			invalidRowsMap[rowIndex] = true
+		}
+	}
 
 	return domain.ValidationResult{}
 }
