@@ -92,7 +92,41 @@ func main() {
 	mux.HandleFunc("GET /tools-ui", renderUI)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./web"))))
 
+	// Defensive Security Headers Middleware
+	securityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		mux.ServeHTTP(w, r)
+	})
 
-	log.Printf("[SaaS] Server listening on port %s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           securityHandler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		log.Printf("[SaaS] Server listening on http://localhost:%s\n", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server listen error: %v", err)
+		}
+	}()
+
+	<-stop
+	log.Println("[SaaS] Shutting down gracefully...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Server shutdown error: %v\n", err)
+	}
+	log.Println("[SaaS] Server stopped")
 }
