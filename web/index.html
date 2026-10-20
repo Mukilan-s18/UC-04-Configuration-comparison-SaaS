@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UC-04 Dashboard | Configuration Comparison SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-mono-xs { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.75rem; }
+    </style>
+</head>
+<body class="bg-gray-100 p-8 font-sans">
+    <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Header -->
+        <header class="flex items-center justify-between pb-4 border-b border-gray-300">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">UC-04 Configuration Comparison SaaS</h1>
+                <p class="text-xs text-gray-500">Sell a service that checks environment settings and reports differences between expected and actual values.</p>
+            </div>
+            <div class="text-right">
+                <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Advantix UC-04</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Screen 1: Run Tools Interface -->
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xl font-bold text-gray-900">Run Tools</h2>
+                    <span class="text-xs font-medium text-gray-500">Screen 1 of 2</span>
+                </div>
+                
+                <!-- Tenant Auth & Quota -->
+                <div class="mb-4 space-y-2">
+                    <label class="block text-xs font-semibold text-gray-600 uppercase">Tenant Authentication</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="auth-token" value="tenant-a-operator" placeholder="Tenant Token (e.g. tenant-a-operator)" class="w-full border rounded p-2 text-sm font-mono" required>
+                        <button type="button" onclick="loadQuota()" class="bg-gray-200 px-4 py-2 rounded text-sm hover:bg-gray-300 font-medium whitespace-nowrap">Load Quota</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1 text-[11px] text-gray-500">
+                        <span>Quick Presets:</span>
+                        <button type="button" onclick="setToken('tenant-a-operator')" class="underline hover:text-blue-600">Tenant A (Pro Operator)</button> |
+                        <button type="button" onclick="setToken('tenant-b-operator')" class="underline hover:text-blue-600">Tenant B (Basic Operator)</button> |
+                        <button type="button" onclick="setToken('tenant-a-viewer')" class="underline hover:text-blue-600">Tenant A (Viewer)</button>
+                    </div>
+                    <div id="quota-display" class="p-3 bg-blue-50 border border-blue-200 rounded text-xs font-mono text-blue-800 min-h-[40px] flex items-center">
+                        Click "Load Quota" to check subscription status.
+                    </div>
+                </div>
+
+                <hr class="my-4 border-gray-200">
+
+                <!-- Run Submission Form -->
+                <form id="run-form" class="space-y-4" onsubmit="submitRun(event)">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold text-gray-600 uppercase">Idempotency Key</label>
+                            <button type="button" onclick="generateNewKey()" class="text-[11px] text-blue-600 hover:underline">New Random Key</button>
+                        </div>
+                        <input type="text" id="idemp-key" placeholder="Idempotency Key" class="w-full border rounded p-2 text-sm font-mono" required>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold text-gray-600 uppercase">JSON Batch Payload</label>
+                            <div class="space-x-1 text-[11px]">
+                                <button type="button" onclick="loadValidFixture('process')" class="text-blue-600 hover:underline">Valid (process)</button> |
+                                <button type="button" onclick="loadValidFixture('validate')" class="text-blue-600 hover:underline">Valid (validate)</button> |
+                                <button type="button" onclick="loadInvalidFixture()" class="text-red-600 hover:underline">Invalid (6 rows)</button>
+                            </div>
+                        </div>
+                        <textarea id="payload" class="w-full h-48 border rounded p-2 font-mono text-xs focus:ring-1 focus:ring-blue-500" placeholder='{"operation":"process", "records":[{"record_id":"max_retries","expected":"3","actual":"5","environment":"TEST"},{"record_id":"region","expected":"us","actual":"us","environment":"STAGE"}]}' required></textarea>
+                    </div>
+
+                    <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-medium px-4 py-2.5 rounded shadow hover:bg-blue-700 transition">Submit Batch</button>
+                </form>
+
+                <!-- Run Result Display -->
+                <div id="run-result" class="mt-4 p-4 border rounded hidden font-mono text-xs overflow-auto bg-gray-50 max-h-72"></div>
+            </div>
+
+            <!-- Screen 2: Run History Interface -->
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Run History</h2>
+                        <span class="text-xs font-medium text-gray-500">Screen 2 of 2 (Historical Results)</span>
+                    </div>
+                    <button type="button" onclick="loadHistory()" class="bg-gray-200 px-4 py-2 rounded text-sm hover:bg-gray-300 font-medium">Refresh History</button>
+                </div>
+                
+                <div id="history-list" class="space-y-2 overflow-y-auto max-h-[640px] font-mono text-xs flex-1">
+                    <div class="text-center text-gray-400 py-12">No runs loaded. Click "Refresh History".</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setToken(token) {
+            document.getElementById('auth-token').value = token;
+            loadQuota();
+            loadHistory();
+        }
+
+        function generateNewKey() {
+            document.getElementById('idemp-key').value = 'key-' + Math.random().toString(36).substring(2, 10) + '-' + Date.now();
+        }
+
+        function loadValidFixture(op) {
+            const data = {
+                "operation": op || "process",
+                "records": [
+                    { "record_id": "max_retries", "expected": "3", "actual": "5", "environment": "TEST" },
+                    { "record_id": "region", "expected": "us", "actual": "us", "environment": "STAGE" }
+                ]
+            };
+            document.getElementById('payload').value = JSON.stringify(data, null, 2);
+            generateNewKey();
+        }
+
+        function loadInvalidFixture() {
+            const data = {
+                "operation": "validate",
+                "records": [
+                    { "record_id": "max_retries", "expected": "3", "actual": "5", "environment": "TEST" },
+                    { "record_id": "region", "expected": "us", "actual": "us", "environment": "STAGE" },
+                    { "record_id": "max_retries", "expected": "3", "actual": "5", "environment": "TEST" },
+                    { "record_id": "X2", "expected": "", "actual": "5", "environment": "TEST" },
+                    { "record_id": "X3", "expected": "3", "actual": "", "environment": "TEST" },
+                    { "record_id": "X4", "expected": "3", "actual": "5", "environment": "PROD" }
+                ]
+            };
+            document.getElementById('payload').value = JSON.stringify(data, null, 2);
+            generateNewKey();
+        }
+
+        function getAuthHeader() {
+            const raw = document.getElementById('auth-token').value.trim();
+            if (!raw) return '';
+            return raw.startsWith('Bearer ') ? raw : 'Bearer ' + raw;
+        }
+
+        async function loadQuota() {
+            const token = getAuthHeader();
+            if (!token) return;
+            const display = document.getElementById('quota-display');
+            display.innerText = "Loading quota...";
+            try {
+                const res = await fetch('/subscription', { headers: { 'Authorization': token } });
+                const data = await res.json();
+                if (res.ok) {
+                    display.innerHTML = `
+                        <div class="space-y-1 w-full">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold uppercase text-blue-900">${data.tenant_id} (${data.plan} plan)</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] ${data.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${data.status}</span>
+                            </div>
+                            <div class="text-[11px] text-gray-700">Remaining Quota: <strong>${data.quota_remaining}</strong> of ${data.quota_limit} (Used: ${data.quota_used}) [UTC Date: ${data.date_utc}]</div>
+                        </div>
+                    `;
+                } else {
+                    display.innerText = "Error " + res.status + ": " + JSON.stringify(data);
+                }
+            } catch (err) {
+                display.innerText = "Failed to load quota: " + err.message;
+            }
+        }
+
+        async function submitRun(e) {
+            e.preventDefault();
+            const token = getAuthHeader();
+            const key = document.getElementById('idemp-key').value.trim();
+            const payload = document.getElementById('payload').value;
+            const resultDiv = document.getElementById('run-result');
+            
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerText = "Submitting batch...";
+
+            try {
+                const res = await fetch('/runs', {
+                    method: 'POST',
+                    headers: { 'Authorization': token, 'Idempotency-Key': key, 'Content-Type': 'application/json' },
+                    body: payload
+                });
+                const data = await res.json();
+                
+                let output = `HTTP ${res.status}\n` + JSON.stringify(data, null, 2);
+                if (data.result && data.result.summary) {
+                    const s = data.result.summary;
+                    output = `HTTP ${res.status} [STATUS: ${data.status}]\n` +
+                             `SUMMARY: input_rows=${s.input_rows}, changed_rows=${s.changed_rows}, unchanged_rows=${s.unchanged_rows}\n\n` +
+                             JSON.stringify(data, null, 2);
+                }
+                resultDiv.innerText = output;
+                loadQuota();
+                loadHistory();
+            } catch (err) {
+                resultDiv.innerText = "Submission Error: " + err.message;
+            }
+        }
+
+        async function loadHistory() {
+            const token = getAuthHeader();
+            if (!token) return;
+            const list = document.getElementById('history-list');
+            list.innerHTML = '<div class="text-gray-400 py-4">Refreshing history...</div>';
+            try {
+                const res = await fetch('/runs', { headers: { 'Authorization': token } });
+                const data = await res.json();
+                list.innerHTML = '';
+                if (!Array.isArray(data) || data.length === 0) {
+                    list.innerHTML = '<div class="text-gray-400 py-8 text-center">No runs recorded for this tenant yet.</div>';
+                    return;
+                }
+                data.forEach(run => {
+                    const div = document.createElement('div');
+                    const isSuccess = run.status === 'Succeeded';
+                    const isFailed = run.status === 'Failed';
+                    div.className = `p-3 border rounded ${isSuccess ? 'bg-green-50/50 border-green-200' : (isFailed ? 'bg-red-50/50 border-red-200' : 'bg-gray-50 border-gray-200')} whitespace-pre-wrap`;
+                    
+                    let content = `Run ID: ${run.run_id} | Operation: ${run.operation} | Status: ${run.status}\n`;
+                    content += `Key: ${run.idempotency_key} | Created: ${run.created_at}\n`;
+                    if (run.result) {
+                        content += `Result: ${JSON.stringify(run.result, null, 2)}`;
+                    } else if (run.error) {
+                        content += `Error: ${run.error}`;
+                    }
+                    div.innerText = content;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                list.innerHTML = '<div class="text-red-500 py-4">Error loading history: ' + err.message + '</div>';
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            generateNewKey();
+            loadValidFixture('process');
+            loadQuota();
+            loadHistory();
+        };
+    </script>
+</body>
+</html>
