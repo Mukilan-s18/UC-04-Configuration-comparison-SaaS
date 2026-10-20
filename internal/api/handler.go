@@ -358,3 +358,103 @@ func (h *APIHandler) CreateRun(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.repo.ReserveSlotAndCreateRun(r.Context(), newRun, maxQuota); err != nil {
 		if errors.Is(err, repository.ErrQuotaExceeded) {
+			h.writeJSONError(w, http.StatusTooManyRequests, "Daily quota exhausted for tenant")
+			return
+		}
+		if errors.Is(err, repository.ErrKeyCollision) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "RUN_IN_PROGRESS"})
+			return
+		}
+		h.writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to reserve run slot: %v", err))
+		return
+	}
+
+	// 11. Run Lifecycle: Persist Running before invoking helper; finish as Succeeded or Failed.
+	// Check shared test hook to force failure after acceptance (check A11)
+	forceFailure := r.Header.Get("X-Test-Force-Failure") == "true"
+	if forceFailure {
+		errMessage := "Simulated failure via shared test hook"
+		_ = h.repo.FinishRun(r.Context(), newRun.RunID, domain.RunStatusFailed, nil, errMessage)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(domain.RunResponse{
+			RunID:  newRun.RunID,
+			Status: domain.RunStatusFailed,
+			Error:  errMessage,
+		})
+		return
+	}
+
+	// 12. Execute Operation
+	var resultBytes []byte
+	var execErr error
+
+	if operation == domain.OpValidate {
+		valResult := h.engine.ValidateBatch(records)
+		resultBytes, execErr = json.Marshal(valResult)
+	} else {
+		procResult := h.engine.ProcessBatch(records)
+		resultBytes, execErr = json.Marshal(procResult)
+	}
+
+	if execErr != nil {
+		_ = h.repo.FinishRun(r.Context(), newRun.RunID, domain.RunStatusFailed, nil, execErr.Error())
+		h.writeJSONError(w, http.StatusInternalServerError, "Internal execution error")
+		return
+	}
+
+	_ = h.repo.FinishRun(r.Context(), newRun.RunID, domain.RunStatusSucceeded, resultBytes, "")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(domain.RunResponse{
+		RunID:  newRun.RunID,
+		Status: domain.RunStatusSucceeded,
+		Result: json.RawMessage(resultBytes),
+	})
+}
+
+// GET /runs - Protected. Lists only the authenticated tenant's runs.
+func (h *APIHandler) ListRuns(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, err := h.AuthenticateSession(r)
+	if err != nil {
+		h.writeJSONError(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	runs, err := h.repo.ListRuns(r.Context(), session.TenantID)
+	if err != nil {
+		h.writeJSONError(w, http.StatusInternalServerError, "Failed to fetch runs")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(runs)
+}
+
+// GET /runs/{id}/result - Protected. Authorizes tenant; returns {run_id, status, result}.
+// Failed runs return recorded error instead of result. Unknown or other tenant ID returns 404.
+func (h *APIHandler) GetRunResult(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, err := h.AuthenticateSession(r)
+	if err != nil {
+		h.writeJSONError(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	// Path parsing: /runs/{id}/result
+	runID := r.PathValue("id")
+	if runID == "" {
