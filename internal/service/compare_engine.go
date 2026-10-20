@@ -87,5 +87,62 @@ func (e *CompareEngine) ValidateBatch(records []domain.UC04Record) domain.Valida
 		}
 	}
 
-	return domain.ValidationResult{}
+	totalRows := len(records)
+	invalidCount := len(invalidRowsMap)
+	validCount := totalRows - invalidCount
+
+	if issues == nil {
+		issues = []domain.Issue{}
+	}
+
+	return domain.ValidationResult{
+		ValidRows:   validCount,
+		InvalidRows: invalidCount,
+		Issues:      issues,
+	}
+}
+
+// ProcessBatch compares trimmed expected and actual strings using case-sensitive equality.
+// Assumes validation passed (or call ValidateBatch first).
+// Preserves row order in output.
+func (e *CompareEngine) ProcessBatch(records []domain.UC04Record) domain.ProcessResult {
+	var processedRows []domain.ProcessedRow
+	changedCount := 0
+	unchangedCount := 0
+
+	for _, rec := range records {
+		trimmedExpected := strings.TrimSpace(rec.Expected)
+		trimmedActual := strings.TrimSpace(rec.Actual)
+
+		var comparison string
+		if trimmedExpected == trimmedActual {
+			comparison = "UNCHANGED"
+			unchangedCount++
+		} else {
+			comparison = "CHANGED"
+			changedCount++
+		}
+
+		processedRows = append(processedRows, domain.ProcessedRow{
+			RecordID:    rec.RecordID,
+			Expected:    rec.Expected,
+			Actual:      rec.Actual,
+			Environment: rec.Environment,
+			Comparison:  comparison,
+		})
+	}
+
+	if processedRows == nil {
+		processedRows = []domain.ProcessedRow{}
+	}
+
+	return domain.ProcessResult{
+		Summary: domain.ProcessSummary{
+			InputRows:     len(records),
+			ChangedRows:   changedCount,
+			UnchangedRows: unchangedCount,
+		},
+		Rows:   processedRows,
+		Issues: []domain.Issue{},
+	}
 }
