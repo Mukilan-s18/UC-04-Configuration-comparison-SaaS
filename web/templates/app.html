@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConfigGuard | Cloud Configuration Comparison SaaS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#1e1b4b',
+                        },
+                        dark: {
+                            950: '#090d16',
+                            900: '#0f172a',
+                            850: '#131e36',
+                            800: '#1e293b',
+                            700: '#334155',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glow-brand {
+            box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+    </style>
+</head>
+<body class="bg-dark-950 text-slate-100 min-h-screen font-sans selection:bg-brand-500 selection:text-white antialiased">
+    <!-- Ambient Background Lighting -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-600/15 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/3 -right-40 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative z-10 flex flex-col min-h-screen">
+        <!-- Top Navigation -->
+        <header class="glass-panel border-b border-slate-800/80 sticky top-0 z-50 px-6 py-4">
+            <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/30 text-white font-display font-extrabold text-xl">
+                        ⚖️
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-display font-bold text-lg tracking-tight text-white">ConfigGuard</h1>
+                            <span class="px-2 py-0.5 text-xs font-mono font-medium rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">UC-04</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Environment Configuration Comparison SaaS</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="flex items-center bg-dark-900/90 rounded-xl p-1 border border-slate-800">
+                    <button id="tab-run-btn" onclick="switchTab('run')" class="px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 bg-brand-600 text-white shadow-md shadow-brand-600/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Run Tools
+                    </button>
+                    <button id="tab-history-btn" onclick="switchTab('history')" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Execution History
+                    </button>
+                </div>
+
+                <!-- Verified Session & Tenant Switcher -->
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-xs text-slate-400">Authenticated As</div>
+                        <div class="flex items-center gap-2">
+                            <span id="badge-tenant" class="font-mono text-xs font-semibold text-white">tenant-a</span>
+                            <span id="badge-role" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">OPERATOR</span>
+                            <span id="badge-plan" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">PRO</span>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <select id="session-select" onchange="changeSession(this.value)" class="bg-dark-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
+                            <option value="tenant-a-operator">Tenant A (Operator - Pro)</option>
+                            <option value="tenant-a-viewer">Tenant A (Viewer - Pro)</option>
+                            <option value="tenant-b-operator">Tenant B (Operator - Basic)</option>
+                            <option value="tenant-b-viewer">Tenant B (Viewer - Basic)</option>
+                            <option value="tenant-suspended-operator">Tenant Suspended (Operator)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Container -->
+        <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+            <!-- Quota & Subscription Status Banner -->
+            <div class="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-6">
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-400 font-medium">Daily Quota (UTC)</div>
+                        <div class="text-2xl font-display font-bold text-white flex items-baseline gap-2 mt-0.5">
+                            <span id="stat-quota-used" class="text-brand-400">0</span>
+                            <span class="text-slate-500 text-lg">/</span>
+                            <span id="stat-quota-limit" class="text-slate-400 text-lg">10</span>
+                            <span class="text-xs font-normal text-slate-400 ml-1">runs accepted</span>
+                        </div>
+                    </div>
+                    <div class="h-10 w-px bg-slate-800"></div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-400 font-medium">Remaining Today</div>
+                        <div id="stat-quota-remaining" class="text-2xl font-display font-bold text-emerald-400 mt-0.5">10</div>
+                    </div>
+                    <div class="h-10 w-px bg-slate-800"></div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-400 font-medium">Subscription Status</div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="status-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span id="stat-subscription-status" class="text-sm font-semibold uppercase text-emerald-300">ACTIVE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="refreshSubscription()" class="px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 text-xs text-slate-300 border border-slate-700 transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Refresh Quota
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 1: RUN TOOLS SCREEN -->
+            <section id="screen-run" class="space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left: Control & Batch Input Form -->
+                    <div class="lg:col-span-7 glass-panel rounded-2xl p-6 space-y-5 border border-slate-800">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-lg font-display font-bold text-white">Execute Comparison Batch</h2>
+                                <p class="text-xs text-slate-400">Validate environment settings or generate a full comparison report</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="loadFixture('valid')" class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all font-medium">
+                                    + Load Valid Fixture (2)
+                                </button>
+                                <button type="button" onclick="loadFixture('invalid')" class="text-xs px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all font-medium">
+                                    + Load Invalid Fixture (6)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Operation Toggle -->
+                        <div>
+                            <label class="block text-xs uppercase font-semibold tracking-wider text-slate-300 mb-2">Target Operation</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label id="label-op-validate" class="cursor-pointer border-2 border-brand-500 bg-brand-500/10 rounded-xl p-3 flex items-center justify-between transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="operation" value="validate" checked onchange="onOperationChange('validate')" class="text-brand-500 focus:ring-brand-500">
+                                        <div>
+                                            <div class="text-sm font-semibold text-white">validate</div>
+                                            <div class="text-[11px] text-slate-400">Check rules R1-R4 without comparison output</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">All Plans</span>
+                                </label>
+
+                                <label id="label-op-process" class="cursor-pointer border border-slate-700 bg-dark-900 rounded-xl p-3 flex items-center justify-between transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="operation" value="process" onchange="onOperationChange('process')" class="text-brand-500 focus:ring-brand-500">
+                                        <div>
+                                            <div class="text-sm font-semibold text-white">process</div>
+                                            <div class="text-[11px] text-slate-400">Generate full diff report (CHANGED/UNCHANGED)</div>
+                                        </div>
+                                    </div>
+                                    <span id="badge-pro-tag" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono font-bold">Pro Only</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Idempotency Key & Test Hook Controls -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-xs font-semibold text-slate-300">Idempotency-Key</label>
+                                    <button type="button" onclick="regenerateIdempotencyKey()" class="text-[10px] text-brand-400 hover:text-brand-300">New UUID</button>
+                                </div>
+                                <input type="text" id="input-idempotency-key" class="w-full font-mono text-xs bg-dark-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" value="test-key-001">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-300 block mb-1">Simulated Failure Hook (A11)</label>
+                                <label class="flex items-center gap-2 mt-2 cursor-pointer">
+                                    <input type="checkbox" id="check-force-failure" class="rounded border-slate-700 bg-dark-900 text-rose-500 focus:ring-rose-500">
+                                    <span class="text-xs text-slate-300">Inject X-Test-Force-Failure Header</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- JSON / Table Input Editor -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-semibold text-slate-300">Batch Records (1 to 10 rows, max 64 KiB)</label>
+                                <span id="record-count-indicator" class="text-xs font-mono text-slate-400">2 rows</span>
+                            </div>
+                            <textarea id="records-json-input" rows="8" class="w-full font-mono text-xs bg-dark-900 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 leading-relaxed"></textarea>
+                        </div>
+
+                        <!-- Submit Action -->
+                        <div class="flex items-center justify-between pt-2">
+                            <div id="viewer-warning" class="hidden text-xs text-amber-400 flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                Viewer role: Run submission disabled
+                            </div>
+                            <div class="ml-auto">
+                                <button id="btn-submit-run" onclick="submitRun()" class="px-6 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-lg shadow-brand-500/25 transition-all flex items-center gap-2">
+                                    <span id="submit-spinner" class="hidden animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                                    <span>Execute Run</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Result Viewer -->
+                    <div class="lg:col-span-5 glass-panel rounded-2xl p-6 space-y-4 border border-slate-800 flex flex-col">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div>
+                                <h3 class="text-base font-display font-bold text-white">Live Execution Result</h3>
+                                <p class="text-xs text-slate-400" id="result-status-sub">No run executed in this view yet</p>
+                            </div>
+                            <span id="badge-live-status" class="hidden px-2.5 py-1 text-xs font-mono font-bold rounded-lg uppercase"></span>
+                        </div>
+
+                        <div id="live-result-container" class="flex-1 overflow-auto space-y-4 text-xs font-mono">
+                            <div class="flex flex-col items-center justify-center h-64 text-slate-500 space-y-2">
+                                <svg class="w-12 h-12 stroke-current opacity-30" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <div>Click "Execute Run" to test the SaaS pipeline</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: EXECUTION HISTORY SCREEN -->
+            <section id="screen-history" class="hidden space-y-6">
+                <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-display font-bold text-white">Tenant Execution History</h2>
+                            <p class="text-xs text-slate-400">Audit trail of all validated and processed batches for this tenant</p>
+                        </div>
+                        <button onclick="loadRunsHistory()" class="px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 text-xs text-slate-300 border border-slate-700 transition-colors flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Reload History
+                        </button>
+                    </div>
+
+                    <!-- History Table -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-800">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-dark-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                                <tr>
+                                    <th class="px-4 py-3">Run ID</th>
+                                    <th class="px-4 py-3">Operation</th>
+                                    <th class="px-4 py-3">Idempotency Key</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3">Timestamp (UTC)</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-slate-800/60 font-mono">
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-slate-500 font-sans">Loading history...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Selected Run Details Modal / Panel -->
+                <div id="history-details-panel" class="hidden glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-base font-display font-bold text-white flex items-center gap-2">
+                                Run Result Inspector
+                                <span id="detail-run-id" class="text-xs font-mono text-brand-400"></span>
+                            </h3>
+                        </div>
+                        <button onclick="closeDetailPanel()" class="text-slate-400 hover:text-white text-xs px-2 py-1 rounded bg-dark-800 border border-slate-700">Close</button>
+                    </div>
+                    <div id="history-detail-content" class="overflow-auto max-h-96 text-xs font-mono space-y-3"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- UI Scripts -->
+    <script>
+        // Predefined Fixtures
+        const VALID_FIXTURE = [
+            { "record_id": "max_retries", "expected": "3", "actual": "5", "environment": "TEST" },
+            { "record_id": "region", "expected": "us", "actual": "us", "environment": "STAGE" }
+        ];
+
+        const INVALID_FIXTURE = [
+            { "record_id": "max_retries", "expected": "3", "actual": "5", "environment": "TEST" },
+            { "record_id": "region", "expected": "us", "actual": "us", "environment": "STAGE" },
+            { "record_id": "max_retries", "expected": "3", "actual": "5", "environment": "TEST" }, // R1 Duplicate
+            { "record_id": "X2", "expected": "", "actual": "5", "environment": "TEST" }, // R2 Empty expected
+            { "record_id": "X3", "expected": "3", "actual": "", "environment": "TEST" }, // R3 Empty actual
+            { "record_id": "X4", "expected": "3", "actual": "5", "environment": "PROD" }  // R4 Invalid env
+        ];
+
+        let currentSessionToken = "tenant-a-operator";
+        let currentSessionData = {
+            tenantID: "tenant-a",
+            role: "Operator",
+            plan: "pro",
+            status: "active"
+        };
+
+        function initApp() {
+            loadFixture('valid');
+            regenerateIdempotencyKey();
+            refreshSubscription();
+        }
+
+        function switchTab(tab) {
+            const runScreen = document.getElementById('screen-run');
+            const historyScreen = document.getElementById('screen-history');
+            const tabRunBtn = document.getElementById('tab-run-btn');
+            const tabHistoryBtn = document.getElementById('tab-history-btn');
+
+            if (tab === 'run') {
+                runScreen.classList.remove('hidden');
+                historyScreen.classList.add('hidden');
+                tabRunBtn.className = "px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 bg-brand-600 text-white shadow-md shadow-brand-600/20";
+                tabHistoryBtn.className = "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-2";
+            } else {
+                runScreen.classList.add('hidden');
+                historyScreen.classList.remove('hidden');
+                tabHistoryBtn.className = "px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 bg-brand-600 text-white shadow-md shadow-brand-600/20";
+                tabRunBtn.className = "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-2";
+                loadRunsHistory();
+            }
+        }
+
+        function changeSession(token) {
+            currentSessionToken = token;
+            if (token === 'tenant-a-operator') {
+                currentSessionData = { tenantID: 'tenant-a', role: 'Operator', plan: 'pro', status: 'active' };
+            } else if (token === 'tenant-a-viewer') {
+                currentSessionData = { tenantID: 'tenant-a', role: 'Viewer', plan: 'pro', status: 'active' };
+            } else if (token === 'tenant-b-operator') {
+                currentSessionData = { tenantID: 'tenant-b', role: 'Operator', plan: 'basic', status: 'active' };
+            } else if (token === 'tenant-b-viewer') {
+                currentSessionData = { tenantID: 'tenant-b', role: 'Viewer', plan: 'basic', status: 'active' };
+            } else if (token === 'tenant-suspended-operator') {
+                currentSessionData = { tenantID: 'tenant-suspended', role: 'Operator', plan: 'pro', status: 'suspended' };
+            }
+
+            // Update UI Badges
+            document.getElementById('badge-tenant').textContent = currentSessionData.tenantID;
+            document.getElementById('badge-role').textContent = currentSessionData.role.toUpperCase();
+            document.getElementById('badge-plan').textContent = currentSessionData.plan.toUpperCase();
+
+            // Handle Viewer role warning
+            const btnSubmit = document.getElementById('btn-submit-run');
+            const viewerWarn = document.getElementById('viewer-warning');
+            if (currentSessionData.role === 'Viewer') {
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+                viewerWarn.classList.remove('hidden');
+            } else {
+                btnSubmit.disabled = false;
+                btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+                viewerWarn.classList.add('hidden');
+            }
+
+            refreshSubscription();
+        }
+
+        function loadFixture(type) {
+            const data = type === 'valid' ? VALID_FIXTURE : INVALID_FIXTURE;
+            document.getElementById('records-json-input').value = JSON.stringify(data, null, 2);
+            document.getElementById('record-count-indicator').textContent = `${data.length} rows`;
+        }
+
+        function regenerateIdempotencyKey() {
+            const rand = 'key-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now().toString(36);
+            document.getElementById('input-idempotency-key').value = rand;
+        }
+
+        function onOperationChange(op) {
+            const lVal = document.getElementById('label-op-validate');
+            const lProc = document.getElementById('label-op-process');
+            if (op === 'validate') {
+                lVal.className = "cursor-pointer border-2 border-brand-500 bg-brand-500/10 rounded-xl p-3 flex items-center justify-between transition-all";
+                lProc.className = "cursor-pointer border border-slate-700 bg-dark-900 rounded-xl p-3 flex items-center justify-between transition-all";
+            } else {
+                lProc.className = "cursor-pointer border-2 border-brand-500 bg-brand-500/10 rounded-xl p-3 flex items-center justify-between transition-all";
+                lVal.className = "cursor-pointer border border-slate-700 bg-dark-900 rounded-xl p-3 flex items-center justify-between transition-all";
+            }
+        }
+
+        async function refreshSubscription() {
+            try {
+                const res = await fetch('/subscription', {
+                    headers: { 'Authorization': `Bearer ${currentSessionToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('stat-quota-used').textContent = data.quota_used;
+                    document.getElementById('stat-quota-limit').textContent = data.quota_limit;
+                    document.getElementById('stat-quota-remaining').textContent = data.quota_remaining;
+                    document.getElementById('stat-subscription-status').textContent = data.status.toUpperCase();
+
+                    const dot = document.getElementById('status-indicator-dot');
+                    if (data.status === 'active') {
+                        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+                        document.getElementById('stat-subscription-status').className = "text-sm font-semibold uppercase text-emerald-300";
+                    } else {
+                        dot.className = "w-2.5 h-2.5 rounded-full bg-rose-400";
+                        document.getElementById('stat-subscription-status').className = "text-sm font-semibold uppercase text-rose-400";
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load subscription info", e);
+            }
+        }
+
+        async function submitRun() {
+            const btnSubmit = document.getElementById('btn-submit-run');
+            const spinner = document.getElementById('submit-spinner');
+            const resultBox = document.getElementById('live-result-container');
+            const badgeLive = document.getElementById('badge-live-status');
+            const statusSub = document.getElementById('result-status-sub');
+
+            btnSubmit.disabled = true;
+            spinner.classList.remove('hidden');
+
+            try {
+                const rawRecords = JSON.parse(document.getElementById('records-json-input').value);
+                const operation = document.querySelector('input[name="operation"]:checked').value;
+                const idempotencyKey = document.getElementById('input-idempotency-key').value;
+                const forceFailure = document.getElementById('check-force-failure').checked;
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentSessionToken}`,
+                    'Idempotency-Key': idempotencyKey
+                };
+                if (forceFailure) {
+                    headers['X-Test-Force-Failure'] = 'true';
+                }
+
+                const res = await fetch('/runs', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        operation: operation,
+                        records: rawRecords
+                    })
+                });
+
+                const data = await res.json();
+
+                badgeLive.classList.remove('hidden');
+                statusSub.textContent = `HTTP ${res.status} ${res.statusText}`;
+
+                if (res.status === 201 || res.status === 200) {
+                    const isReplay = res.status === 200;
+                    badgeLive.textContent = isReplay ? "200 REPLAY" : `${res.status} ${data.status}`;
+                    badgeLive.className = isReplay 
+                        ? "px-2.5 py-1 text-xs font-mono font-bold rounded-lg uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                        : (data.status === 'Succeeded' 
+                            ? "px-2.5 py-1 text-xs font-mono font-bold rounded-lg uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                            : "px-2.5 py-1 text-xs font-mono font-bold rounded-lg uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30");
+
+                    renderRunResult(resultBox, data);
+                } else {
+                    badgeLive.textContent = `HTTP ${res.status}`;
+                    badgeLive.className = "px-2.5 py-1 text-xs font-mono font-bold rounded-lg uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                    resultBox.innerHTML = `
+                        <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 space-y-2">
+                            <div class="font-bold flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Request Rejected (${res.status})
+                            </div>
+                            <pre class="overflow-x-auto text-[11px]">${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                resultBox.innerHTML = `<div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300">Client Error: ${e.message}</div>`;
+            } finally {
+                btnSubmit.disabled = false;
+                spinner.classList.add('hidden');
+                refreshSubscription();
+            }
+        }
+
+        function renderRunResult(container, data) {
+            let html = `
+                <div class="space-y-3">
+                    <div class="p-3 bg-dark-900 rounded-xl border border-slate-800 space-y-1">
+                        <div class="text-[10px] text-slate-400">RUN ID</div>
+                        <div class="text-xs font-semibold text-brand-400 select-all">${data.run_id}</div>
+                    </div>
+            `;
+
+            if (data.status === 'Failed' || data.error) {
+                html += `
+                    <div class="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300">
+                        <div class="font-bold mb-1">Execution Failure:</div>
+                        <div>${data.error || 'Unknown failure recorded'}</div>
+                    </div>
+                `;
+            } else if (data.result) {
+                const res = data.result;
+                if (res.summary) {
+                    // Pro comparison report
+                    html += `
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="p-2.5 rounded-lg bg-dark-900 border border-slate-800 text-center">
+                                <div class="text-[10px] text-slate-400">INPUT</div>
+                                <div class="text-base font-bold text-white">${res.summary.input_rows}</div>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-center">
+                                <div class="text-[10px] text-amber-300">CHANGED</div>
+                                <div class="text-base font-bold text-amber-300">${res.summary.changed_rows}</div>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center">
+                                <div class="text-[10px] text-emerald-300">UNCHANGED</div>
+                                <div class="text-base font-bold text-emerald-300">${res.summary.unchanged_rows}</div>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-800">
+                            <table class="w-full text-left text-[11px]">
+                                <thead class="bg-dark-900 text-slate-400 uppercase">
+                                    <tr>
+                                        <th class="p-2">Record ID</th>
+                                        <th class="p-2">Expected</th>
+                                        <th class="p-2">Actual</th>
+                                        <th class="p-2">Env</th>
+                                        <th class="p-2">Comparison</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    ${res.rows.map(r => `
+                                        <tr class="${r.comparison === 'CHANGED' ? 'bg-amber-500/5' : ''}">
+                                            <td class="p-2 text-white font-medium">${r.record_id}</td>
+                                            <td class="p-2 text-slate-300">${r.expected}</td>
+                                            <td class="p-2 text-slate-300">${r.actual}</td>
+                                            <td class="p-2 text-slate-400">${r.environment}</td>
+                                            <td class="p-2 font-bold ${r.comparison === 'CHANGED' ? 'text-amber-400' : 'text-emerald-400'}">
+                                                ${r.comparison}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else if (res.valid_rows !== undefined) {
+                    // Validation report
+                    html += `
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center">
+                                <div class="text-[10px] text-emerald-300">VALID ROWS</div>
+                                <div class="text-base font-bold text-emerald-300">${res.valid_rows}</div>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-center">
+                                <div class="text-[10px] text-rose-300">INVALID ROWS</div>
+                                <div class="text-base font-bold text-rose-300">${res.invalid_rows}</div>
+                            </div>
+                        </div>
+                    `;
+                    if (res.issues && res.issues.length > 0) {
+                        html += `
+                            <div class="overflow-x-auto rounded-xl border border-rose-500/30 bg-rose-500/5">
+                                <table class="w-full text-left text-[11px]">
+                                    <thead class="bg-dark-900 text-rose-300 uppercase">
+                                        <tr>
+                                            <th class="p-2">Row #</th>
+                                            <th class="p-2">Field</th>
+                                            <th class="p-2">Rule ID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800">
+                                        ${res.issues.map(iss => `
+                                            <tr>
+                                                <td class="p-2 text-white">${iss.row_index}</td>
+                                                <td class="p-2 text-slate-300">${iss.field}</td>
+                                                <td class="p-2 text-rose-400 font-bold">${iss.rule_id}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    }
+                }
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        async function loadRunsHistory() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500 font-sans">Fetching runs...</td></tr>`;
+
+            try {
+                const res = await fetch('/runs', {
+                    headers: { 'Authorization': `Bearer ${currentSessionToken}` }
+                });
+                if (res.ok) {
+                    const runs = await res.json();
+                    if (!runs || runs.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500 font-sans">No runs recorded for this tenant yet</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = runs.map(run => `
+                        <tr class="hover:bg-dark-850/60 transition-colors">
+                            <td class="px-4 py-3 font-semibold text-brand-400">${run.run_id.substring(0, 8)}...</td>
+                            <td class="px-4 py-3 text-white uppercase text-[11px]">${run.operation}</td>
+                            <td class="px-4 py-3 text-slate-400 text-[11px]">${run.idempotency_key}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                    run.status === 'Succeeded' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                                    run.status === 'Failed' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                                    'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                }">${run.status}</span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-400 text-[11px]">${new Date(run.created_at).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-right">
+                                <button onclick="viewRunDetail('${run.run_id}')" class="px-2.5 py-1 rounded bg-dark-800 hover:bg-brand-600 text-slate-300 hover:text-white transition-all text-[11px]">
+                                    Inspect
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-rose-400 font-sans">Failed to fetch history (HTTP ${res.status})</td></tr>`;
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-rose-400 font-sans">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function viewRunDetail(runID) {
+            const panel = document.getElementById('history-details-panel');
+            const detailId = document.getElementById('detail-run-id');
+            const content = document.getElementById('history-detail-content');
+
+            panel.classList.remove('hidden');
+            detailId.textContent = runID;
+            content.innerHTML = `<div class="p-4 text-center text-slate-500 font-sans">Loading run ${runID}...</div>`;
+
+            try {
+                const res = await fetch(`/runs/${runID}/result`, {
+                    headers: { 'Authorization': `Bearer ${currentSessionToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    renderRunResult(content, data);
+                } else {
+                    content.innerHTML = `<div class="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400">Failed to load run: HTTP ${res.status}</div>`;
+                }
+            } catch (e) {
+                content.innerHTML = `<div class="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400">Error: ${e.message}</div>`;
+            }
+        }
+
+        function closeDetailPanel() {
+            document.getElementById('history-details-panel').classList.add('hidden');
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
