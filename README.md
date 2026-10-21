@@ -69,12 +69,21 @@ The service is fully provisioned and running live on Microsoft Azure:
 | **Evidence Blob Storage** | Azure Storage Account (`stadvantixdev01` / `evidence-private`) | Active |
 | **Azure Region** | `centralindia` (Pune Datacenter) | Active |
 | **Subscription ID** | `c2666af3-bf62-4bb6-ba1e-36a7a730fd61` | Verified |
+| **Live Runbook & Deployment Proof** | [`docs/AZURE_LIVE_RUNBOOK_AND_PROOF.md`](docs/AZURE_LIVE_RUNBOOK_AND_PROOF.md) | Verified |
 
 > [!NOTE]
 > Run the live health check from your terminal:
 > ```bash
 > curl -i https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/health
 > ```
+
+### 📸 Live Deployment Screenshots
+
+#### 1. Interactive Web Application on Azure Container Apps
+![Live Web UI on Azure Container Apps](docs/screenshots/azure_live_page.png)
+
+#### 2. Live Configuration Diff Execution & Verification
+![Live Comparison Diff on Azure](docs/screenshots/azure_live_diff.png)
 
 ---
 
@@ -601,6 +610,13 @@ az login
 ├── skills/
 │   └── configuration-compare/
 │       └── SKILL.md                 # Agent operational runbook
+├── docs/
+│   ├── AZURE_LIVE_RUNBOOK_AND_PROOF.md   # Live runbook, test credentials & audit proof
+│   ├── AZURE_LIVE_RUNBOOK_AND_PROOF.html # Standalone HTML deployment proof
+│   ├── AZURE_LIVE_RUNBOOK_AND_PROOF.pdf  # Compiled PDF evaluation proof
+│   └── screenshots/                      # Live verification screenshots
+│       ├── azure_live_page.png
+│       └── azure_live_diff.png
 ├── evidence/
 │   ├── acceptance_report.md         # Deployment audit & acceptance records
 │   └── aife_record.md               # AI-Assisted Engineering disclosure

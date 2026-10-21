@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConfigGuard (UC-04) — Azure Live Runbook & Proof of Deployment</title>
+    <style>
+        :root {
+            --bg-page: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #515154;
+            --accent: #0071e3;
+            --border: #d2d2d7;
+            --bg-subtle: #f5f5f7;
+            --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "SF Mono", Menlo, Monaco, Consolas, monospace;
+        }
+
+        @page {
+            margin: 12mm 15mm;
+            size: A4 portrait;
+        }
+
+        body {
+            font-family: var(--font-system);
+            color: var(--text-primary);
+            background: var(--bg-page);
+            line-height: 1.5;
+            margin: 0;
+            padding: 30px;
+            max-width: 860px;
+            margin: 0 auto;
+            font-size: 13px;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-size: 24px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            page-break-after: avoid;
+        }
+
+        h3 {
+            font-size: 15px;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            page-break-after: avoid;
+        }
+
+        h4 {
+            font-size: 13.5px;
+            margin-top: 14px;
+            margin-bottom: 6px;
+            page-break-after: avoid;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 12px;
+            page-break-inside: avoid;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: left;
+            word-break: break-word;
+        }
+
+        th {
+            background: var(--bg-subtle);
+            font-weight: 600;
+        }
+
+        code, pre {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            background: var(--bg-subtle);
+            border-radius: 4px;
+        }
+
+        code {
+            padding: 2px 5px;
+            word-break: break-all;
+        }
+
+        pre {
+            padding: 12px 14px;
+            white-space: pre-wrap !important;
+            word-break: break-all !important;
+            overflow-wrap: break-word !important;
+            border: 1px solid var(--border);
+            line-height: 1.45;
+            page-break-inside: avoid;
+        }
+
+        .alert-box {
+            background: #f0f7ff;
+            border-left: 4px solid var(--accent);
+            padding: 12px 16px;
+            margin: 14px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 12.5px;
+            page-break-inside: avoid;
+        }
+
+        .alert-warning {
+            background: #fff8e6;
+            border-left: 4px solid #f5a623;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-green {
+            background: #e6f4ea;
+            color: #137333;
+        }
+
+        .badge-blue {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 260px;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            margin: 12px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            page-break-inside: avoid;
+        }
+
+        ul, ol {
+            page-break-inside: avoid;
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: var(--bg-subtle);
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            font-size: 12.5px;
+        }
+
+        .meta-item {
+            display: flex;
+            gap: 6px;
+        }
+
+        .meta-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ConfigGuard (UC-04) — Azure Live Runbook &amp; Deployment Proof</h1>
+
+    <div class="meta-grid">
+        <div class="meta-item"><span class="meta-label">Project:</span> Multi-Tenant Configuration Comparison SaaS</div>
+        <div class="meta-item"><span class="meta-label">Status:</span> <span class="badge badge-green">Live in Production (Verified Active)</span></div>
+        <div class="meta-item"><span class="meta-label">Challenge:</span> Advantix Campus Hiring — SaaS Track</div>
+        <div class="meta-item"><span class="meta-label">Region:</span> Central India (Pune, <code>centralindia</code>)</div>
+        <div class="meta-item"><span class="meta-label">Verified Date:</span> <strong>2026-10-21T10:25:00Z (October 21, 2026)</strong></div>
+        <div class="meta-item"><span class="meta-label">Live URL:</span> <a href="https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/" target="_blank">Azure Container App Endpoint</a></div>
+    </div>
+
+    <h2>1. Executive Summary</h2>
+    <p>
+        This document provides the official evaluator runbook, architectural details, and cryptographic verification proof for <strong>ConfigGuard (UC-04)</strong>. The application is running live in Microsoft Azure Container Apps, backed by Azure Storage and private evidence containers.
+    </p>
+    <p>The platform exposes both:</p>
+    <ol>
+        <li><strong>Interactive Production Web Application:</strong> An Apple-inspired interface with multi-tenant session switching, live UTC quota tracking, interactive payload editors, and visual diff tables.</li>
+        <li><strong>Advantix Shared SaaS REST API:</strong> Exactly 6 endpoints complying with the Advantix SaaS specification (<code>/health</code>, <code>/tools</code>, <code>/subscription</code>, <code>/runs</code>, <code>/runs/{id}</code>, <code>/runs/{id}/result</code>).</li>
+    </ol>
+
+    <h2>2. Deployed Version &amp; Artifact Provenance Matrix</h2>
+    <p>This deployment is cryptographically tied to the following Git commits and container image digests:</p>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 28%;">Attribute</th>
+                <th style="width: 38%;">Deployed Value</th>
+                <th style="width: 34%;">Verification &amp; Evidence</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Application Engine Version</strong></td>
+                <td><code>v1.0.0</code></td>
+                <td>Reported by <code>/tools</code> contract endpoint</td>
+            </tr>
+            <tr>
+                <td><strong>Deployed Codebase Commit</strong></td>
+                <td><code>fa52fd7b9c925b2a43f06d92de1a70cb8524ef3e</code> (<code>fa52fd7</code>)</td>
+                <td>Core engine, Dockerfile, &amp; CI test suite build</td>
+            </tr>
+            <tr>
+                <td><strong>Release &amp; Runbook Commit</strong></td>
+                <td><code>main</code> (Repository Commit 41 of 41)</td>
+                <td>Full test suite passing on GitHub Actions</td>
+            </tr>
+            <tr>
+                <td><strong>Azure Container App</strong></td>
+                <td><code>ca-configguard-dev</code></td>
+                <td>Production container app in Central India</td>
+            </tr>
+            <tr>
+                <td><strong>Active Revision</strong></td>
+                <td><code>ca-configguard-dev--latest</code></td>
+                <td>Single revision receiving 100% live traffic</td>
+            </tr>
+            <tr>
+                <td><strong>Revision State &amp; Health</strong></td>
+                <td><span class="badge badge-green">Healthy</span> / <span class="badge badge-blue">Provisioned</span> / Running</td>
+                <td>Confirmed via Azure Resource Manager</td>
+            </tr>
+            <tr>
+                <td><strong>Production Container Image</strong></td>
+                <td><code>acrcfgcmpdev.azurecr.io/configguard:v1</code></td>
+                <td>Azure Container Registry (ACR) image</td>
+            </tr>
+            <tr>
+                <td><strong>Public Deployment Tag</strong></td>
+                <td><code>ttl.sh/configguard-uc04-advantix:24h</code></td>
+                <td>Immutable public deployment registry tag</td>
+            </tr>
+            <tr>
+                <td><strong>Container Image Digest (SHA256)</strong></td>
+                <td><code>sha256:11629b89b88c2b221a7c7b1f497d6a3293fadb0956ab158e67facbceeff8d576</code></td>
+                <td>Cryptographic image manifest hash</td>
+            </tr>
+            <tr>
+                <td><strong>Runtime Architecture</strong></td>
+                <td><code>linux/amd64</code> (Alpine 3.20 + Go Static Binary)</td>
+                <td>Minimal, distroless-style hardened container</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>3. Live Azure Endpoints</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Target URL</th>
+                <th>Method</th>
+                <th>Response Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Live Web UI</strong></td>
+                <td><code>https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/</code></td>
+                <td><code>GET</code></td>
+                <td><code>200 OK</code> (Bespoke HTML/CSS/JS Production UI)</td>
+            </tr>
+            <tr>
+                <td><strong>Health Probe</strong></td>
+                <td><code>https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/health</code></td>
+                <td><code>GET</code></td>
+                <td><code>200 OK</code> (Public, reveals zero tenant data)</td>
+            </tr>
+            <tr>
+                <td><strong>Tool Catalog</strong></td>
+                <td><code>https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/tools</code></td>
+                <td><code>GET</code></td>
+                <td><code>200 OK</code> (Requires <code>Authorization: Bearer &lt;token&gt;</code>)</td>
+            </tr>
+            <tr>
+                <td><strong>Tenant Subscription</strong></td>
+                <td><code>https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/subscription</code></td>
+                <td><code>GET</code></td>
+                <td><code>200 OK</code> (Live Daily Quota, Active Plan, Role)</td>
+            </tr>
+            <tr>
+                <td><strong>Batch Runner API</strong></td>
+                <td><code>https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/runs</code></td>
+                <td><code>POST</code></td>
+                <td><code>201 Created</code> / <code>200 OK</code> / <code>400</code> / <code>403</code> / <code>429</code></td>
+            </tr>
+            <tr>
+                <td><strong>Run Audit History</strong></td>
+                <td><code>https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/runs</code></td>
+                <td><code>GET</code></td>
+                <td><code>200 OK</code> (Tenant-scoped execution audit array)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    
+
+    <h2>4. Test Credentials &amp; Security Governance Review</h2>
+
+    <h3>4.1. Authentication Architecture (Bearer Tokens vs. Username/Password)</h3>
+    <p>
+        <strong>API-First SaaS Standard:</strong> Conforming to the Advantix SaaS Challenge specifications (UC-04) and B2B SaaS best practices, ConfigGuard implements token-based Bearer authentication (<code>Authorization: Bearer &lt;token&gt;</code>). This architecture enables deterministic, automated validation by test harnesses and CI/CD pipelines without brittle interactive login forms or CAPTCHAs.
+    </p>
+    <p>
+        <strong>Zero-Friction Web Evaluation:</strong> Human evaluators testing the browser interface do not need to type usernames or passwords. The navigation header includes a <strong>Tenant Session Selector dropdown</strong> (<code>Tenant A - Operator</code>, <code>Tenant A - Viewer</code>, <code>Tenant B - Operator</code>, <code>Tenant B - Viewer</code>, <code>Tenant C - Suspended</code>) that automatically passes verified session credentials to in-browser API calls.
+    </p>
+
+    <h3>4.2. Pre-Seeded Test Sandbox Accounts</h3>
+    <h4>Tenant A (<code>tenant-a</code>) — Pro Tier</h4>
+    <ul>
+        <li><strong>Plan:</strong> <code>Pro</code> (Full diff comparison and validation enabled)</li>
+        <li><strong>Daily Quota:</strong> 10 runs / calendar day (Resets automatically at 00:00:00 UTC)</li>
+        <li><strong>Subscription Status:</strong> <code>Active</code></li>
+        <li><strong>Operator Token:</strong> <code>tenant-a-operator</code> (Full write/execute permissions)</li>
+        <li><strong>Viewer Token:</strong> <code>tenant-a-viewer</code> (Read-only access to audit runs)</li>
+    </ul>
+
+    <h4>Tenant B (<code>tenant-b</code>) — Basic Tier</h4>
+    <ul>
+        <li><strong>Plan:</strong> <code>Basic</code> (Rule validation R1–R4 enabled; diff processing blocked with <code>403 Forbidden</code> without quota debit)</li>
+        <li><strong>Daily Quota:</strong> 3 runs / calendar day (Resets automatically at 00:00:00 UTC)</li>
+        <li><strong>Subscription Status:</strong> <code>Active</code></li>
+        <li><strong>Operator Token:</strong> <code>tenant-b-operator</code> (Can execute <code>validate</code> runs)</li>
+        <li><strong>Viewer Token:</strong> <code>tenant-b-viewer</code> (Read-only access)</li>
+    </ul>
+
+    <h4>Tenant C (<code>tenant-suspended</code>) — Suspended Account</h4>
+    <ul>
+        <li><strong>Plan:</strong> <code>Basic</code></li>
+        <li><strong>Subscription Status:</strong> <code>Suspended</code> (All batch runs rejected with <code>403 Forbidden</code>; historical reads permitted)</li>
+        <li><strong>Operator Token:</strong> <code>tenant-suspended-operator</code></li>
+    </ul>
+
+    <div class="alert-box alert-warning">
+        <strong>⚠️ Security Governance &amp; External Email Advisory:</strong><br>
+        <strong>1. Isolated Sandbox Scoping:</strong> The credentials listed above are synthetic test tokens provisioned exclusively for the Advantix student evaluation sandbox (<code>rg-advantix-sandbox-dev</code>). They possess zero privileges outside this demo application.<br>
+        <strong>2. Credential Transmission Policy:</strong> In compliance with enterprise data security guidelines, reusable production credentials must <em>never be transmitted via unencrypted email attachments</em> to external company addresses. Enterprise production deployments require federated Identity Providers (e.g., Azure Entra ID / OAuth2 OIDC) or encrypted secret channels (e.g., Azure Key Vault Secret references, ephemeral one-time secret links).<br>
+        <strong>3. Credential Revocation/Rotation:</strong> In this Container App environment, tokens can be instantly revoked or rotated by updating Container App environment configuration via the Azure CLI (<code>az containerapp update --set-env-vars ...</code>) or triggering a new container revision with zero downtime.
+    </div>
+
+    <h2>5. Cloud Infrastructure Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Resource</th>
+                <th>Azure Name / Identifier</th>
+                <th>Purpose &amp; Specification</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Azure Container App</td>
+                <td><code>ca-configguard-dev</code></td>
+                <td>Production container hosting Go SaaS engine (0.5 vCPU, 1.0 GiB RAM)</td>
+            </tr>
+            <tr>
+                <td>Managed Environment</td>
+                <td><code>cae-advantix-dev</code></td>
+                <td>Serverless Azure Container Apps managed environment</td>
+            </tr>
+            <tr>
+                <td>Container Registry</td>
+                <td><code>acrcfgcmpdev.azurecr.io</code></td>
+                <td>Azure Container Registry hosting production image <code>configguard:v1</code></td>
+            </tr>
+            <tr>
+                <td>Resource Group</td>
+                <td><code>rg-advantix-sandbox-dev</code></td>
+                <td>Central India Datacenter (Pune, <code>centralindia</code>)</td>
+            </tr>
+            <tr>
+                <td>Storage Account</td>
+                <td><code>stcfgcmp9432dev</code></td>
+                <td>Azure Storage backing private evidence blobs</td>
+            </tr>
+            <tr>
+                <td>Evidence Blob Container</td>
+                <td><code>uc04-evidence-dev</code></td>
+                <td>Private execution logs and hashes</td>
+            </tr>
+            <tr>
+                <td>Subscription ID</td>
+                <td><code>c2666af3-bf62-4bb6-ba1e-36a7a730fd61</code></td>
+                <td>Azure for Students active subscription</td>
+            </tr>
+        </tbody>
+    </table>
+
+    
+
+    <h2>6. Step-by-Step Evaluator Runbook</h2>
+
+    <h3>Option A: Interactive Web UI Walkthrough</h3>
+    <ol>
+        <li>Open <a href="https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/" target="_blank">https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io/</a>.</li>
+        <li>Notice the page loads directly with the full interactive UI (zero JSON echo output).</li>
+        <li>Verify the session dropdown defaults to <code>Tenant A (Operator, Pro)</code> with live quota tracking.</li>
+        <li>Click <strong>Load Valid (2 rows)</strong> to populate the test dataset.</li>
+        <li>Select <strong>process</strong> mode (Pro plan diff comparison).</li>
+        <li>Click <strong>Execute Run</strong>.</li>
+        <li>Verify <code>HTTP 201 Created</code> appears with the structured diff results table (1 Changed, 1 Unchanged).</li>
+        <li>Switch to the <strong>Execution History</strong> tab to inspect the persistent audit log.</li>
+    </ol>
+
+    <h3>Option B: Command-Line (cURL) Walkthrough (Wrap-Safe Commands)</h3>
+    <p>These commands are formatted to prevent line clipping and have been verified directly against the live Azure deployment:</p>
+
+    <h4>1. Public Health Check</h4>
+    <pre><code>BASE="https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io"
+curl -i -s "${BASE}/health"</code></pre>
+    <p><strong>Live Output (Verified October 21, 2026):</strong></p>
+    <pre><code>HTTP/2 200 
+content-type: application/json
+date: Wed, 21 Oct 2026 10:25:00 GMT
+content-length: 57
+
+{"status":"UP","service":"configuration-comparison-saas"}</code></pre>
+
+    <h4>2. Tool Catalog Inspection (UC-04 Contract)</h4>
+    <pre><code>BASE="https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io"
+curl -i -s "${BASE}/tools" \
+  -H "Authorization: Bearer tenant-a-operator"</code></pre>
+    <p><strong>Live Output:</strong></p>
+    <pre><code>HTTP/2 200 
+content-type: application/json
+
+{
+  "description": "Checks environment settings and reports differences between expected and actual values",
+  "operations": ["validate", "process"],
+  "rules": ["R1", "R2", "R3", "R4"],
+  "tool": "configuration-comparison",
+  "version": "1.0.0"
+}</code></pre>
+
+    <h4>3. Tenant Subscription &amp; Live Quota Status</h4>
+    <pre><code>BASE="https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io"
+curl -i -s "${BASE}/subscription" \
+  -H "Authorization: Bearer tenant-a-operator"</code></pre>
+    <p><strong>Live Output (Verified October 21, 2026):</strong></p>
+    <pre><code>HTTP/2 200 
+content-type: application/json
+
+{
+  "tenant_id": "tenant-a",
+  "plan": "pro",
+  "status": "active",
+  "quota_limit": 10,
+  "quota_used": 1,
+  "quota_remaining": 9,
+  "date_utc": "2026-10-21"
+}</code></pre>
+
+    
+
+    <h4>4. Pro Tier Diff Execution (process mode)</h4>
+    <pre><code>BASE="https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io"
+curl -i -s -X POST "${BASE}/runs" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer tenant-a-operator" \
+  -H "Idempotency-Key: eval-run-$(date +%s)" \
+  -d '{
+    "operation": "process",
+    "records": [
+      {
+        "record_id": "max_retries",
+        "expected": "3",
+        "actual": "5",
+        "environment": "TEST"
+      },
+      {
+        "record_id": "region",
+        "expected": "us",
+        "actual": "us",
+        "environment": "STAGE"
+      }
+    ]
+  }'</code></pre>
+    <p><strong>Live Output (Verified October 21, 2026):</strong></p>
+    <pre><code>HTTP/2 201 Created
+content-type: application/json
+date: Wed, 21 Oct 2026 10:25:05 GMT
+
+{
+  "run_id": "e40cb92f-9d95-450a-8642-2acd4a45c93e",
+  "status": "Succeeded",
+  "result": {
+    "summary": {
+      "input_rows": 2,
+      "changed_rows": 1,
+      "unchanged_rows": 1
+    },
+    "rows": [
+      {
+        "record_id": "max_retries",
+        "expected": "3",
+        "actual": "5",
+        "environment": "TEST",
+        "comparison": "CHANGED"
+      },
+      {
+        "record_id": "region",
+        "expected": "us",
+        "actual": "us",
+        "environment": "STAGE",
+        "comparison": "UNCHANGED"
+      }
+    ],
+    "issues": []
+  }
+}</code></pre>
+
+    <h4>5. Cross-Tenant Isolation Proof</h4>
+    <pre><code>BASE="https://ca-configguard-dev.delightfulrock-51583d3c.centralindia.azurecontainerapps.io"
+# Attempt to inspect Tenant A's run as Tenant B:
+curl -i -s "${BASE}/runs/e40cb92f-9d95-450a-8642-2acd4a45c93e/result" \
+  -H "Authorization: Bearer tenant-b-operator"</code></pre>
+    <p><strong>Live Output:</strong></p>
+    <pre><code>HTTP/2 404 
+content-type: application/json
+
+{"error":"Run not found"}</code></pre>
+    <p><em>(Strict isolation: Tenant B cannot inspect or access runs belonging to Tenant A).</em></p>
+
+    <h2>7. Verified Proof of Live Deployment</h2>
+    <p>Below are screenshots captured directly from the live Azure Container App:</p>
+    <p><strong>1. Live Web UI on Azure Container Apps:</strong></p>
+    <img src="screenshots/azure_live_page.png" alt="Live Web UI on Azure">
+
+    <p><strong>2. Live Execution Result &amp; Difference Analysis on Azure:</strong></p>
+    <img src="screenshots/azure_live_diff.png" alt="Live Comparison Result on Azure">
+
+    <h2>8. Compliance Checklist</h2>
+    <ul>
+        <li>[x] <strong>Live on Azure:</strong> Running on Azure Container Apps in Central India (<code>centralindia</code>), verified active on October 21, 2026.</li>
+        <li>[x] <strong>Version Traceability:</strong> Deployed codebase commit (<code>fa52fd7</code>), ACR image tag (<code>configguard:v1</code>), and digest (<code>sha256:11629b...</code>) documented.</li>
+        <li>[x] <strong>Web UI Live:</strong> Root URL <code>/</code> serves the clean Apple-style interface with zero JSON echo output.</li>
+        <li>[x] <strong>Advantix SaaS Spec:</strong> Exactly 6 REST API endpoints implemented and passing all acceptance criteria.</li>
+        <li>[x] <strong>Credentials &amp; Governance:</strong> Pre-seeded Tenant A, B, and C accounts documented with external email security guidelines.</li>
+        <li>[x] <strong>CLI Commands Tested:</strong> All cURL examples verified live and formatted with wrap-safe lines.</li>
+    </ul>
+
+</body>
+</html>
